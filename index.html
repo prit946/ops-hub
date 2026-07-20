@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ops Hub</title>
+<style>
+:root{
+  --bg:#09101f;--s1:#0f1929;--s2:#162035;--bd:#1e2d47;--bd2:#253554;
+  --acc:#e8a020;--live:#22d37a;--pend:#e06020;--leg:#e05050;--soon:#4a5568;
+  --tx:#cdd8ea;--mx:#7a90aa;--mn:#3d5070;
+  --mono:"SF Mono","Cascadia Code",Consolas,"Courier New",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+@media(prefers-color-scheme:light){:root{
+  --bg:#f0f4f8;--s1:#ffffff;--s2:#f7f9fb;--bd:#dde4ee;--bd2:#c8d4e2;
+  --acc:#c47d0a;--live:#16a34a;--pend:#c45010;--leg:#c03030;--soon:#8a9ab0;
+  --tx:#1a2535;--mx:#556070;--mn:#aab8c8;
+}}
+:root[data-theme=light]{
+  --bg:#f0f4f8;--s1:#ffffff;--s2:#f7f9fb;--bd:#dde4ee;--bd2:#c8d4e2;
+  --acc:#c47d0a;--live:#16a34a;--pend:#c45010;--leg:#c03030;--soon:#8a9ab0;
+  --tx:#1a2535;--mx:#556070;--mn:#aab8c8;
+}
+:root[data-theme=dark]{
+  --bg:#09101f;--s1:#0f1929;--s2:#162035;--bd:#1e2d47;--bd2:#253554;
+  --acc:#e8a020;--live:#22d37a;--pend:#e06020;--leg:#e05050;--soon:#4a5568;
+  --tx:#cdd8ea;--mx:#7a90aa;--mn:#3d5070;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);min-height:100vh;padding-bottom:60px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── Header ── */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:24px 20px 20px;border-bottom:1px solid var(--bd);gap:12px}
+.hdr-left h1{font-size:20px;font-weight:700;letter-spacing:-.3px}
+.hdr-left p{font-size:11px;color:var(--mx);margin-top:2px;font-family:var(--mono)}
+.hdr-actions{display:flex;gap:8px;flex-shrink:0}
+.hdr-btn{background:var(--s1);border:1px solid var(--bd);color:var(--mx);padding:5px 11px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:.3px;text-transform:uppercase;font-family:var(--sans);transition:border-color .15s,color .15s}
+.hdr-btn:hover{border-color:var(--bd2);color:var(--tx)}
+
+/* ── Status bar ── */
+.status-bar{display:flex;gap:0;border-bottom:1px solid var(--bd);overflow-x:auto;scrollbar-width:none}
+.status-bar::-webkit-scrollbar{display:none}
+.sb-item{display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;border-right:1px solid var(--bd)}
+.sb-item:last-child{border-right:none}
+.sb-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.sb-dot.live{background:var(--live)}.sb-dot.pend{background:var(--pend)}.sb-dot.soon{background:var(--soon)}
+.sb-count{color:var(--tx)}.sb-label{color:var(--mx)}
+
+/* ── Main ── */
+main{max-width:700px;margin:0 auto;padding:28px 16px 0}
+
+/* ── Section ── */
+.section{margin-bottom:36px}
+.sec-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--bd)}
+.sec-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;font-weight:800}
+.sec-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--mx)}
+.sec-count{font-size:10px;color:var(--mn);margin-left:auto;font-family:var(--mono)}
+
+/* ── Card ── */
+.card{background:var(--s1);border:1px solid var(--bd);border-left:3px solid var(--bd);border-radius:0 6px 6px 0;margin-bottom:9px;overflow:hidden;transition:border-color .15s}
+.card:hover{border-color:var(--bd2);border-left-color:inherit}
+.card.live{border-left-color:var(--live)}
+.card.pend{border-left-color:var(--pend)}
+.card.leg{border-left-color:var(--leg)}
+.card.soon{border-left-color:var(--soon);opacity:.65}
+.card-body{padding:13px 15px}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px}
+.card-name{font-size:14px;font-weight:700;color:var(--tx)}
+.badge{font-size:9px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:10px;white-space:nowrap;flex-shrink:0}
+.badge.live{background:rgba(34,211,122,.12);color:var(--live);border:1px solid rgba(34,211,122,.25)}
+.badge.pend{background:rgba(224,96,32,.12);color:var(--pend);border:1px solid rgba(224,96,32,.25)}
+.badge.leg{background:rgba(224,80,80,.12);color:var(--leg);border:1px solid rgba(224,80,80,.25)}
+.badge.soon{background:rgba(74,85,104,.15);color:var(--soon);border:1px solid rgba(74,85,104,.3)}
+.card-desc{font-size:11px;color:var(--mx);line-height:1.5;margin-bottom:10px}
+.card-desc strong{color:var(--tx);font-weight:600}
+
+/* ── URL rows ── */
+.rows{display:flex;flex-direction:column;gap:4px}
+.row{display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:6px 9px;min-width:0}
+.row-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mn);min-width:28px;flex-shrink:0;font-family:var(--mono)}
+.row-val{font-family:var(--mono);font-size:11px;color:var(--acc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-decoration:none;min-width:0}
+.row-val:hover{text-decoration:underline}
+.row-val.muted{color:var(--mx)}
+.row-val.key{color:var(--pend)}
+.copy{background:none;border:none;cursor:pointer;color:var(--mn);padding:2px 5px;border-radius:3px;font-size:11px;flex-shrink:0;line-height:1;transition:color .12s,background .1s;font-family:var(--mono)}
+.copy:hover{color:var(--tx);background:var(--bd)}
+.copy.ok{color:var(--live)}
+
+/* ── Gap list (CF Worker gaps) ── */
+.gaps{margin-top:10px;border-top:1px solid var(--bd);padding-top:10px}
+.gaps-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mn);margin-bottom:7px}
+.gap-row{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mx);padding:3px 0}
+.gap-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.gap-dot.done{background:var(--live)}.gap-dot.open{background:var(--pend)}.gap-dot.act{background:var(--acc)}
+.gap-row b{color:var(--tx);font-weight:600}
+
+/* ── Alert strip ── */
+.alert{background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.2);border-radius:4px;padding:8px 11px;margin-bottom:10px;font-size:11px;color:var(--acc);line-height:1.5}
+
+/* ── Toast ── */
+#toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--tx);color:var(--bg);padding:7px 16px;border-radius:6px;font-size:12px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:100;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:520px){
+  main{padding:16px 12px 0}
+  .hdr{padding:18px 14px 16px}
+  .card-body{padding:11px 12px}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="hdr-left">
+    <h1>Ops Hub</h1>
+    <p>prit946@gmail.com &middot; updated 2026-07-20</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="hdr-btn" onclick="toggleTheme()">Theme</button>
+  </div>
+</header>
+
+<div class="status-bar">
+  <div class="sb-item"><div class="sb-dot live"></div><span class="sb-count" id="sc-live">—</span>&nbsp;<span class="sb-label">Live</span></div>
+  <div class="sb-item"><div class="sb-dot pend"></div><span class="sb-count" id="sc-pend">—</span>&nbsp;<span class="sb-label">Action needed</span></div>
+  <div class="sb-item"><div class="sb-dot soon"></div><span class="sb-count" id="sc-soon">—</span>&nbsp;<span class="sb-label">Coming soon</span></div>
+</div>
+
+<main>
+
+<!-- ── PERSONAL ── -->
+<section class="section" data-sec="personal">
+  <div class="sec-hdr">
+    <div class="sec-icon" style="background:#0d2040;color:#4a90d9">P</div>
+    <span class="sec-label">Personal</span>
+  </div>
+
+  <div class="card pend">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Brain OS</span><span class="badge pend">Deploy needed</span></div>
+      <div class="card-desc">ADHD task app — brain dump → Claude sorts into Today / This Week / Later / Ignore. Built, runs locally on Mac. Needs Render deploy for iPhone access.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">LOC</span><span class="row-val muted">~/Projects/Claude/apps/brain-os</span><button class="copy" onclick="cp(this,'~/Projects/Claude/apps/brain-os')">⧉</button></div>
+        <div class="row"><span class="row-lbl">HOST</span><a class="row-val" href="https://render.com" target="_blank">render.com</a><button class="copy" onclick="cp(this,'https://render.com')">⧉</button></div>
+        <div class="row"><span class="row-lbl">KEY</span><span class="row-val muted">needs ANTHROPIC_API_KEY env var on Render</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card soon">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Personal Finance</span><span class="badge soon">Coming soon</span></div>
+      <div class="card-desc">Budget tracker, spending categories, monthly targets. Planned on hub.</div>
+    </div>
+  </div>
+
+  <div class="card soon">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Life Dashboard</span><span class="badge soon">Coming soon</span></div>
+      <div class="card-desc">Health, habits, goals — one view. Planned on hub.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── BUSINESS ── -->
+<section class="section" data-sec="business">
+  <div class="sec-hdr">
+    <div class="sec-icon" style="background:#1a1040;color:#8b5cf6">B</div>
+    <span class="sec-label">Business</span>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Project Hub</span><span class="badge live">Live</span></div>
+      <div class="card-desc">GitHub Issues pipeline — tracks every project across all businesses. Intake via CF Worker <strong>project.intake</strong>. Labels: today · this-week · someday · needs-info · wont-do.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">ISSUE</span><a class="row-val" href="https://github.com/prit946/project-hub/issues" target="_blank">github.com/prit946/project-hub/issues</a><button class="copy" onclick="cp(this,'https://github.com/prit946/project-hub/issues')">⧉</button></div>
+        <div class="row"><span class="row-lbl">REPO</span><a class="row-val" href="https://github.com/prit946/project-hub" target="_blank">github.com/prit946/project-hub</a><button class="copy" onclick="cp(this,'https://github.com/prit946/project-hub')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Prit Business Op</span><span class="badge live">Live</span></div>
+      <div class="card-desc">Business ops dashboard. Linked from store hub admin section.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val" href="https://prit946.github.io/prit-business-op/" target="_blank">prit946.github.io/prit-business-op/</a><button class="copy" onclick="cp(this,'https://prit946.github.io/prit-business-op/')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── UPS STORE 8181 ── -->
+<section class="section" data-sec="store">
+  <div class="sec-hdr">
+    <div class="sec-icon" style="background:#1a0d00;color:#e8a020">8</div>
+    <span class="sec-label">UPS Store 8181</span>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Employee Hub</span><span class="badge live">Live · share with staff</span></div>
+      <div class="card-desc">Entry point for all employees and guest stores. Role select (Admin / Employee / Guest). Share this URL — never changes.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val" href="https://prit946.github.io/store8181-hub/" target="_blank">prit946.github.io/store8181-hub/</a><button class="copy" onclick="cp(this,'https://prit946.github.io/store8181-hub/')">⧉</button></div>
+        <div class="row"><span class="row-lbl">PIN</span><span class="row-val key">1997</span><button class="copy" onclick="cp(this,'1997')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Z Report</span><span class="badge live">Live</span></div>
+      <div class="card-desc">Daily Z tape entry. Submit → Reports (auto-archive by month/year) → Settings. Guest stores get their own local profile. Old GAS URL auto-redirects here.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">APP</span><a class="row-val" href="https://prit946.github.io/store8181-hub/zreport.html" target="_blank">prit946.github.io/store8181-hub/zreport.html</a><button class="copy" onclick="cp(this,'https://prit946.github.io/store8181-hub/zreport.html')">⧉</button></div>
+        <div class="row"><span class="row-lbl">SHEET</span><a class="row-val" href="https://docs.google.com/spreadsheets/d/1OiU8cDWGvpJFIV2h89Oq6gWwfqkyso2GDmqzsrhqwxQ" target="_blank">ZReport Tracker</a><button class="copy" onclick="cp(this,'1OiU8cDWGvpJFIV2h89Oq6gWwfqkyso2GDmqzsrhqwxQ')">⧉</button></div>
+        <div class="row"><span class="row-lbl">LOG</span><a class="row-val" href="https://docs.google.com/spreadsheets/d/1pjc73HA3JVu-rbEAl-kNRQ08_VxvRdXWwxAzFmaKRWM" target="_blank">Text Logger (Roster + Sales Log)</a><button class="copy" onclick="cp(this,'1pjc73HA3JVu-rbEAl-kNRQ08_VxvRdXWwxAzFmaKRWM')">⧉</button></div>
+        <div class="row"><span class="row-lbl">GAS</span><a class="row-val muted" href="https://script.google.com/d/1tar_JJO5Ca92EdKOW_f2VWyeiRIW-zngsYq7tU48dlNhOuVzIuvODaKT/edit" target="_blank">Z Bot Script (redirect stub)</a><button class="copy" onclick="cp(this,'1tar_JJO5Ca92EdKOW_f2VWyeiRIW-zngsYq7tU48dlNhOuVzIuvODaKT')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Royalty &amp; Stamps</span><span class="badge live">Live</span></div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val" href="https://prit946.github.io/store8181-hub/royalty.html" target="_blank">prit946.github.io/store8181-hub/royalty.html</a><button class="copy" onclick="cp(this,'https://prit946.github.io/store8181-hub/royalty.html')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── INFRASTRUCTURE ── -->
+<section class="section" data-sec="infra">
+  <div class="sec-hdr">
+    <div class="sec-icon" style="background:#001a0d;color:#22d37a">I</div>
+    <span class="sec-label">Infrastructure</span>
+    <span class="sec-count">powers everything</span>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">CF Worker Gateway</span><span class="badge live">Live</span></div>
+      <div class="card-desc">All Google Workspace ops (Drive, Sheets, Gmail, Calendar, Tasks) + GitHub project actions + AI (Gemini). This is the engine — always use CF Worker first, never GAS.</div>
+      <div class="alert">2 gaps open: <strong>Notion auth</strong> (Gap 5) · <strong>MCP mode</strong> (Gap 10) · <strong>Gemini</strong> needs GEMINI_API_KEY set in CF dashboard</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val" href="https://spring-sea-ac0a.prit946.workers.dev" target="_blank">spring-sea-ac0a.prit946.workers.dev</a><button class="copy" onclick="cp(this,'https://spring-sea-ac0a.prit946.workers.dev')">⧉</button></div>
+        <div class="row"><span class="row-lbl">KEY</span><span class="row-val key">Store8181Prit2026</span><button class="copy" onclick="cp(this,'Store8181Prit2026')">⧉</button></div>
+        <div class="row"><span class="row-lbl">REPO</span><a class="row-val" href="https://github.com/prit946/claude-gateway-worker" target="_blank">github.com/prit946/claude-gateway-worker</a><button class="copy" onclick="cp(this,'https://github.com/prit946/claude-gateway-worker')">⧉</button></div>
+        <div class="row"><span class="row-lbl">DASH</span><a class="row-val" href="https://dash.cloudflare.com" target="_blank">dash.cloudflare.com</a><button class="copy" onclick="cp(this,'https://dash.cloudflare.com')">⧉</button></div>
+      </div>
+      <div class="gaps">
+        <div class="gaps-lbl">Available actions</div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>sheets.read / append / update / addTab</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>drive.readDoc / updateDoc / createDoc</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>gmail.send / find / read</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>calendar.list / create &nbsp;·&nbsp; tasks.list / add</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>project.intake / list / note / ready</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>ping · getLog · daily health cron</span></div>
+        <div class="gap-row"><div class="gap-dot act"></div><span><b>gemini.plan</b> — needs GEMINI_API_KEY in CF dashboard</span></div>
+        <div class="gap-row"><div class="gap-dot open"></div><span><b>Notion auth</b> — Gap 5, pending</span></div>
+        <div class="gap-row"><div class="gap-dot open"></div><span><b>MCP mode</b> (/mcp HTTP+SSE) — Gap 10, pending</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Google Drive</span><span class="badge live">Live</span></div>
+      <div class="card-desc">Paste Master Context Doc ID at the start of any Claude chat to restore full context. ZBot context loads Claude Code sessions automatically.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">CTX</span><a class="row-val" href="https://docs.google.com/document/d/1dGbtlO6CXWgCddWDPN7Q8SeEB5gmtto2zJhGRy6p4q8" target="_blank">Master Context Doc (never replace)</a><button class="copy" onclick="cp(this,'1dGbtlO6CXWgCddWDPN7Q8SeEB5gmtto2zJhGRy6p4q8')">⧉</button></div>
+        <div class="row"><span class="row-lbl">DIR</span><a class="row-val" href="https://drive.google.com/drive/folders/1rgEGLAjGMN7GtgPOmIi0x8zcugX96S4b" target="_blank">01_Store_8181 (Claude files)</a><button class="copy" onclick="cp(this,'1rgEGLAjGMN7GtgPOmIi0x8zcugX96S4b')">⧉</button></div>
+        <div class="row"><span class="row-lbl">PROJ</span><a class="row-val" href="https://docs.google.com/document/d/1I7kLAznD2sPOFNVd95lOwSf4QtBcdTkw" target="_blank">ZBot Project Context</a><button class="copy" onclick="cp(this,'1I7kLAznD2sPOFNVd95lOwSf4QtBcdTkw')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">GCP — store8181-hub</span><span class="badge live">Live</span></div>
+      <div class="card-desc">OAuth app + service account for CF Worker Google access. <strong>Publish OAuth app to Production</strong> — prevents 7-day token expiry.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">CONS</span><a class="row-val" href="https://console.cloud.google.com/home/dashboard?project=store8181-hub" target="_blank">console.cloud.google.com</a><button class="copy" onclick="cp(this,'https://console.cloud.google.com/home/dashboard?project=store8181-hub')">⧉</button></div>
+        <div class="row"><span class="row-lbl">PROJ</span><span class="row-val muted">store8181-hub · #24271192757</span><button class="copy" onclick="cp(this,'store8181-hub')">⧉</button></div>
+        <div class="row"><span class="row-lbl">SA</span><span class="row-val muted">hub-gateway@store8181-hub.iam.gserviceaccount.com</span><button class="copy" onclick="cp(this,'hub-gateway@store8181-hub.iam.gserviceaccount.com')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">GitHub</span><span class="badge live">Live</span></div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">ME</span><a class="row-val" href="https://github.com/prit946" target="_blank">github.com/prit946</a><button class="copy" onclick="cp(this,'https://github.com/prit946')">⧉</button></div>
+        <div class="row"><span class="row-lbl">HUB</span><a class="row-val" href="https://github.com/prit946/store8181-hub" target="_blank">store8181-hub</a><button class="copy" onclick="cp(this,'https://github.com/prit946/store8181-hub')">⧉</button></div>
+        <div class="row"><span class="row-lbl">GW</span><a class="row-val" href="https://github.com/prit946/claude-gateway-worker" target="_blank">claude-gateway-worker</a><button class="copy" onclick="cp(this,'https://github.com/prit946/claude-gateway-worker')">⧉</button></div>
+        <div class="row"><span class="row-lbl">OPS</span><a class="row-val" href="https://github.com/prit946/ops-hub" target="_blank">ops-hub (this page)</a><button class="copy" onclick="cp(this,'https://github.com/prit946/ops-hub')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card leg">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">GAS Gateway</span><span class="badge leg">Legacy — keep only for granolaEmailsToDrive</span></div>
+      <div class="card-desc">Do not add new automation here. CF Worker is the permanent replacement. Only granolaEmailsToDrive trigger still runs from GAS.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">KEY</span><span class="row-val key">Store8181Prit2026</span><button class="copy" onclick="cp(this,'Store8181Prit2026')">⧉</button></div>
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val muted" href="https://script.google.com/macros/s/AKfycbwUh6kuKSn4h-YrHdxBjbZHelGDtg0NmTmKXwUZrCW0nB9RUWwmBLcrCIVZIAs0gzQj/exec" target="_blank">GAS Gateway exec URL</a><button class="copy" onclick="cp(this,'https://script.google.com/macros/s/AKfycbwUh6kuKSn4h-YrHdxBjbZHelGDtg0NmTmKXwUZrCW0nB9RUWwmBLcrCIVZIAs0gzQj/exec')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</main>
+
+<div id="toast">Copied</div>
+
+<script>
+function cp(btn,text){
+  navigator.clipboard.writeText(text).then(function(){
+    btn.textContent='✓';btn.classList.add('ok');
+    showToast('Copied');
+    setTimeout(function(){btn.textContent='⧉';btn.classList.remove('ok');},1600);
+  });
+}
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},1600);
+}
+function toggleTheme(){
+  var r=document.documentElement,c=r.getAttribute('data-theme');
+  var dk=c==='dark'||(!c&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+  r.setAttribute('data-theme',dk?'light':'dark');
+}
+// Status bar counts
+(function(){
+  var live=0,pend=0,soon=0;
+  document.querySelectorAll('.card').forEach(function(c){
+    if(c.classList.contains('live'))live++;
+    else if(c.classList.contains('pend'))pend++;
+    else if(c.classList.contains('soon'))soon++;
+  });
+  document.getElementById('sc-live').textContent=live;
+  document.getElementById('sc-pend').textContent=pend;
+  document.getElementById('sc-soon').textContent=soon;
+})();
+</script>
+</body>
+</html>
