@@ -316,6 +316,77 @@ main{max-width:700px;margin:0 auto;padding:28px 16px 0}
 
 </section>
 
+<!-- ── TOOLS & TERMINAL ── -->
+<section class="section" data-sec="tools">
+  <div class="sec-hdr">
+    <div class="sec-icon" style="background:#0d001a;color:#a855f7">T</div>
+    <span class="sec-label">Tools &amp; Terminal Setup</span>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Claude Code</span><span class="badge live">Configured</span></div>
+      <div class="card-desc">CLI + desktop app on Mac Mini. Global CLAUDE.md at <code style="font-size:10px;background:var(--s2);padding:1px 5px;border-radius:3px">~/.claude/CLAUDE.md</code> — standing rules loaded every session. Auto-memory at <code style="font-size:10px;background:var(--s2);padding:1px 5px;border-radius:3px">~/.claude/projects/-Users-prit-m3-Desktop/memory/</code></div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">CMD</span><span class="row-val key">claude</span><button class="copy" onclick="cp(this,'claude')">⧉</button></div>
+        <div class="row"><span class="row-lbl">MODEL</span><span class="row-val muted">claude-sonnet-4-6 (default)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">GitHub CLI (gh)</span><span class="badge live">Authenticated</span></div>
+      <div class="card-desc">Used by Claude Code for all GitHub ops — repo push, PR create, API calls. Token scoped to prit946.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">USER</span><span class="row-val muted">prit946</span></div>
+        <div class="row"><span class="row-lbl">CMD</span><span class="row-val key">gh auth status</span><button class="copy" onclick="cp(this,'gh auth status')">⧉</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">MCP Servers (Claude Code)</span><span class="badge live">Active</span></div>
+      <div class="card-desc">Connected MCPs load automatically in Claude Code sessions. Disconnected ones need manual auth.</div>
+      <div class="gaps">
+        <div class="gaps-lbl">Connected</div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>Google Drive MCP — read/write files via CF Worker</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>Google Workspace MCP — Gmail, Calendar, Tasks</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>Claude in Chrome MCP — browser automation</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>Computer Use MCP — desktop control</span></div>
+        <div class="gap-row"><div class="gap-dot done"></div><span>Notion MCP — read/write Notion pages</span></div>
+        <div class="gap-row"><div class="gap-dot act"></div><span>Granola MCP — meeting transcripts (disconnected)</span></div>
+        <div class="gap-row"><div class="gap-dot open"></div><span>Canva, IFTTT — disconnected, not needed</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Dev Environment</span><span class="badge live">Mac Mini</span></div>
+      <div class="card-desc">Primary machine for all Claude Code work. iPhone → sends task → Mac executes.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">NODE</span><span class="row-val muted">via nvm — check with <code>node -v</code></span></div>
+        <div class="row"><span class="row-lbl">PYTHON</span><span class="row-val muted">python3 (system + homebrew)</span></div>
+        <div class="row"><span class="row-lbl">PROJECTS</span><span class="row-val muted">~/Projects/Claude/{apps,automations,prompts,exports,infrastructure}</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card pend">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Brain OS — Render Deploy</span><span class="badge pend">Action needed</span></div>
+      <div class="card-desc">App is built and runs locally. Needs a Render.com account + deploy to get iPhone access. Manual step: create account at render.com, connect github.com/prit946/brain-os, deploy as web service.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">REPO</span><a class="row-val" href="https://github.com/prit946/brain-os" target="_blank">github.com/prit946/brain-os</a><button class="copy" onclick="cp(this,'https://github.com/prit946/brain-os')">⧉</button></div>
+        <div class="row"><span class="row-lbl">DEPLOY</span><a class="row-val" href="https://render.com" target="_blank">render.com → New Web Service</a></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
 </main>
 
 <div id="toast">Copied</div>
