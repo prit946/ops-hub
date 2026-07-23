@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#09101f">
+<title>Claude Context Hub</title>
+<style>
+:root{
+  --bg:#09101f;--s1:#0f1929;--s2:#162035;--bd:#1e2d47;
+  --acc:#e8a020;--live:#22d37a;--pend:#e06020;--soon:#4a5568;--arch:#3d5070;
+  --tx:#cdd8ea;--mx:#7a90aa;--mn:#3d5070;
+  --mono:"SF Mono","Cascadia Code",Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+@media(prefers-color-scheme:light){:root{
+  --bg:#f0f4f8;--s1:#fff;--s2:#f7f9fb;--bd:#dde4ee;
+  --acc:#c47d0a;--live:#16a34a;--pend:#c45010;--soon:#8a9ab0;--arch:#9ab0c8;
+  --tx:#1a2535;--mx:#556070;--mn:#aab8c8;
+}}
+:root[data-theme=light]{--bg:#f0f4f8;--s1:#fff;--s2:#f7f9fb;--bd:#dde4ee;--acc:#c47d0a;--live:#16a34a;--pend:#c45010;--soon:#8a9ab0;--arch:#9ab0c8;--tx:#1a2535;--mx:#556070;--mn:#aab8c8;}
+:root[data-theme=dark]{--bg:#09101f;--s1:#0f1929;--s2:#162035;--bd:#1e2d47;--acc:#e8a020;--live:#22d37a;--pend:#e06020;--soon:#4a5568;--arch:#3d5070;--tx:#cdd8ea;--mx:#7a90aa;--mn:#3d5070;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--tx);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+/* Header */
+.hdr{padding:20px 20px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hdr h1{font-size:17px;font-weight:700}
+.hdr p{font-size:11px;color:var(--mx);font-family:var(--mono);margin-top:2px}
+.theme-btn{background:var(--s1);border:1px solid var(--bd);color:var(--mx);padding:5px 10px;border-radius:5px;font-size:11px;cursor:pointer}
+
+main{max-width:680px;margin:0 auto;padding:24px 16px 60px}
+
+/* Section */
+.sec{margin-bottom:32px}
+.sec-hdr{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--mx);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--bd)}
+
+/* Instructions tabs */
+.tabs{display:flex;gap:0;border:1px solid var(--bd);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.tab-btn{flex:1;padding:9px 12px;font-size:12px;font-weight:700;color:var(--mx);background:var(--s2);cursor:pointer;border:none;font-family:inherit;transition:all .15s}
+.tab-btn.active{background:var(--acc);color:#fff}
+.tab-panel{display:none;background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:16px}
+.tab-panel.active{display:block}
+.instr-step{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start}
+.instr-step:last-child{margin-bottom:0}
+.step-num{width:22px;height:22px;border-radius:50%;background:var(--acc);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-body{flex:1}
+.step-label{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:4px}
+.step-desc{font-size:11px;color:var(--mx);line-height:1.5}
+.code-block{background:var(--s2);border:1px solid var(--bd);border-radius:5px;padding:10px 12px;font-family:var(--mono);font-size:11px;color:var(--tx);margin-top:6px;position:relative;word-break:break-all}
+.copy-btn{position:absolute;top:6px;right:6px;background:var(--bd);color:var(--mx);border:none;border-radius:3px;padding:3px 8px;font-size:9px;font-weight:700;cursor:pointer;font-family:inherit}
+.copy-btn:active,.copy-btn.ok{background:var(--live);color:#fff}
+
+/* Project cards */
+.proj-card{background:var(--s1);border:1px solid var(--bd);border-left:3px solid var(--bd);border-radius:0 6px 6px 0;margin-bottom:9px;overflow:hidden}
+.proj-card.live{border-left-color:var(--live)}
+.proj-card.active{border-left-color:var(--acc)}
+.proj-card.in-progress{border-left-color:var(--pend)}
+.proj-card.archived{border-left-color:var(--arch);opacity:.6}
+.proj-top{display:flex;justify-content:space-between;align-items:center;padding:12px 14px 8px;gap:8px;cursor:pointer}
+.proj-name{font-size:14px;font-weight:700}
+.proj-meta{font-size:10px;color:var(--mx);margin-top:2px}
+.proj-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.badge{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:20px;white-space:nowrap}
+.badge.live{background:rgba(34,211,122,.12);color:var(--live)}
+.badge.active{background:rgba(232,160,32,.12);color:var(--acc)}
+.badge.in-progress{background:rgba(224,96,32,.12);color:var(--pend)}
+.badge.archived{background:rgba(61,80,112,.15);color:var(--arch)}
+.badge.soon{background:rgba(74,85,104,.15);color:var(--soon)}
+.chevron{color:var(--mn);font-size:14px;transition:transform .2s}
+.proj-card.open .chevron{transform:rotate(90deg)}
+.proj-detail{display:none;padding:0 14px 14px;border-top:1px solid var(--bd);margin-top:0}
+.proj-card.open .proj-detail{display:block}
+.proj-summary{font-size:12px;color:var(--mx);margin:10px 0 12px}
+.proj-load-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--mn);margin-bottom:5px}
+.load-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.load-chip{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;color:var(--mx);font-family:inherit;transition:border-color .15s}
+.load-chip:hover{border-color:var(--acc);color:var(--acc)}
+.load-chip:active,.load-chip.ok{border-color:var(--live);color:var(--live)}
+.context-preview{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:10px;font-family:var(--mono);font-size:10px;color:var(--mx);max-height:120px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;margin-top:8px;display:none}
+.proj-card.open .context-preview{display:block}
+
+/* Links section */
+.link-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.link-item{background:var(--s1);border:1px solid var(--bd);border-radius:5px;padding:10px 12px;font-size:12px;color:var(--tx);cursor:pointer;transition:border-color .15s}
+.link-item:hover{border-color:var(--acc)}
+.link-item .link-label{font-weight:700;margin-bottom:2px}
+.link-item .link-url{font-size:10px;color:var(--mn);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.add-link-btn{background:var(--s2);border:1px dashed var(--bd);border-radius:5px;padding:10px 12px;font-size:12px;color:var(--mn);cursor:pointer;text-align:center;font-family:inherit}
+.add-link-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+/* Status bar */
+.status-bar{display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--s2);border-bottom:1px solid var(--bd);font-size:10px;color:var(--mn)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--mn);flex-shrink:0}
+.status-dot.ok{background:var(--live)}
+.status-dot.err{background:#e74c3c}
+
+/* Empty / loading */
+.loading{text-align:center;padding:40px;color:var(--mn);font-size:12px}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;pointer-events:none;z-index:9999;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<header class="hdr">
+  <div>
+    <h1>Claude Context Hub</h1>
+    <p>prit946 · CF Worker KV</p>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()">◐ Theme</button>
+</header>
+
+<div class="status-bar">
+  <div class="status-dot" id="gw-dot"></div>
+  <span id="gw-status">Connecting to gateway…</span>
+</div>
+
+<main>
+
+<!-- SESSION START INSTRUCTIONS -->
+<div class="sec">
+  <div class="sec-hdr">How to Start a Session</div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="tab('code')">Claude Code</button>
+    <button class="tab-btn" onclick="tab('chat')">Claude Chat</button>
+  </div>
+
+  <div class="tab-panel active" id="panel-code">
+    <div class="instr-step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-label">Open terminal in Claude Code</div>
+        <div class="step-desc">Memory files auto-load. No action needed for Store 8181 or CF Gateway context — it's already there.</div>
+      </div>
+    </div>
+    <div class="instr-step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-label">For any other project, load context</div>
+        <div class="step-desc">Run this in terminal:</div>
+        <div class="code-block">ctx-get brain-os<button class="copy-btn" onclick="cp(this,'ctx-get brain-os')">copy</button></div>
+        <div class="step-desc" style="margin-top:6px">Swap project name. Outputs the full context. Paste into Claude.</div>
+      </div>
+    </div>
+    <div class="instr-step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-label">Session end — Claude saves automatically</div>
+        <div class="step-desc">Standing rule: Claude pushes updated context to KV at session end. You don't touch it.</div>
+      </div>
+    </div>
+    <div class="instr-step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-label">New project scaffold</div>
+        <div class="step-desc">Creates folder, GitHub repo, and KV entry in one command:</div>
+        <div class="code-block">new-project myapp personal "One line summary"<button class="copy-btn" onclick="cp(this,'new-project myapp personal &quot;One line summary&quot;')">copy</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-panel" id="panel-chat">
+    <div class="instr-step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-label">At session start, paste this exact message</div>
+        <div class="step-desc">Replace <code>[project]</code> with the project name from the list below:</div>
+        <div class="code-block" id="chat-load-cmd">Load my project context. CF Worker: https://spring-sea-ac0a.prit946.workers.dev — Key: Store8181Prit2026 — Action: context.get — Name: [project]<button class="copy-btn" onclick="cp(this,document.getElementById('chat-load-cmd').childNodes[0].textContent)">copy</button></div>
+      </div>
+    </div>
+    <div class="instr-step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-label">Or use the quick-copy button below</div>
+        <div class="step-desc">Click "Copy Chat Load" on any project card — it fills in the project name automatically.</div>
+      </div>
+    </div>
+    <div class="instr-step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-label">Save context at session end</div>
+        <div class="step-desc">Tell Claude: <em>"Save context to KV"</em> — it formats everything and pushes to the gateway. Or just say <em>"save"</em>.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROJECTS -->
+<div class="sec">
+  <div class="sec-hdr">Projects <span id="proj-count" style="color:var(--mn)"></span></div>
+  <div id="proj-list"><div class="loading">Loading projects…</div></div>
+</div>
+
+<!-- QUICK LINKS -->
+<div class="sec">
+  <div class="sec-hdr">Quick Links</div>
+  <div class="link-grid" id="link-grid">
+    <div class="link-item" onclick="open2('https://prit946.github.io/store8181-hub/')">
+      <div class="link-label">Store 8181 Hub</div>
+      <div class="link-url">prit946.github.io/store8181-hub</div>
+    </div>
+    <div class="link-item" onclick="open2('https://prit946.github.io/ops-hub/')">
+      <div class="link-label">Ops Hub</div>
+      <div class="link-url">prit946.github.io/ops-hub</div>
+    </div>
+    <div class="link-item" onclick="open2('https://brain-os-phbz.onrender.com')">
+      <div class="link-label">Brain OS</div>
+      <div class="link-url">brain-os-phbz.onrender.com</div>
+    </div>
+    <div class="link-item" onclick="open2('https://prit946.github.io/prit-business-op/')">
+      <div class="link-label">Business Op</div>
+      <div class="link-url">prit946.github.io/prit-business-op</div>
+    </div>
+    <div class="link-item" onclick="open2('https://dash.cloudflare.com')">
+      <div class="link-label">Cloudflare Dashboard</div>
+      <div class="link-url">dash.cloudflare.com</div>
+    </div>
+    <div class="link-item" onclick="open2('https://github.com/prit946')">
+      <div class="link-label">GitHub — prit946</div>
+      <div class="link-url">github.com/prit946</div>
+    </div>
+    <div class="link-item" onclick="open2('https://console.render.com')">
+      <div class="link-label">Render Console</div>
+      <div class="link-url">console.render.com</div>
+    </div>
+    <div class="link-item" onclick="open2('https://console.firebase.google.com/project/prit-business-op')">
+      <div class="link-label">Firebase — prit-business-op</div>
+      <div class="link-url">console.firebase.google.com</div>
+    </div>
+  </div>
+</div>
+
+<!-- CF WORKER REF -->
+<div class="sec">
+  <div class="sec-hdr">Gateway Reference</div>
+  <div style="background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:14px">
+    <div style="font-size:11px;color:var(--mx);margin-bottom:10px">Copy these into any Claude session when working with the gateway directly.</div>
+    <div style="font-size:11px;font-weight:700;color:var(--mn);margin-bottom:4px">URL</div>
+    <div class="code-block" style="margin-bottom:10px">https://spring-sea-ac0a.prit946.workers.dev<button class="copy-btn" onclick="cp(this,'https://spring-sea-ac0a.prit946.workers.dev')">copy</button></div>
+    <div style="font-size:11px;font-weight:700;color:var(--mn);margin-bottom:4px">Key</div>
+    <div class="code-block" style="margin-bottom:10px">Store8181Prit2026<button class="copy-btn" onclick="cp(this,'Store8181Prit2026')">copy</button></div>
+    <div style="font-size:11px;font-weight:700;color:var(--mn);margin-bottom:4px">Context actions</div>
+    <div class="code-block">context.list · context.get · context.set · context.append · context.setFile · context.deleteFile · context.delete<button class="copy-btn" onclick="cp(this,'context.list · context.get · context.set · context.append · context.setFile · context.deleteFile · context.delete')">copy</button></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const GW  = 'https://spring-sea-ac0a.prit946.workers.dev';
+const KEY = 'Store8181Prit2026';
+
+// ── Theme ──
+const root = document.documentElement;
+const saved = localStorage.getItem('ctx-theme');
+if (saved) root.setAttribute('data-theme', saved);
+function toggleTheme() {
+  const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  const nxt = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', nxt);
+  localStorage.setItem('ctx-theme', nxt);
+}
+
+// ── Tabs ──
+function tab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['code','chat'][i] === id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+// ── Gateway call ──
+async function gw(body) {
+  const r = await fetch(GW, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({key: KEY, ...body})
+  });
+  return r.json();
+}
+
+// ── Load projects ──
+async function loadProjects() {
+  const dot = document.getElementById('gw-dot');
+  const st  = document.getElementById('gw-status');
+  try {
+    const d = await gw({action: 'context.list'});
+    const projects = (d.projects || []).sort((a,b) => {
+      const order = {live:0, active:1, 'in-progress':2, archived:3};
+      return (order[a.status]??9) - (order[b.status]??9);
+    });
+    dot.className = 'status-dot ok';
+    st.textContent = `Connected · ${projects.length} project${projects.length!==1?'s':''}`;
+    document.getElementById('proj-count').textContent = `(${projects.length})`;
+    renderProjects(projects);
+  } catch(e) {
+    dot.className = 'status-dot err';
+    st.textContent = 'Gateway offline — check CF Worker';
+    document.getElementById('proj-list').innerHTML = '<div class="loading" style="color:#e74c3c">Could not load projects. Gateway may be down.</div>';
+  }
+}
+
+function renderProjects(projects) {
+  if (!projects.length) {
+    document.getElementById('proj-list').innerHTML = '<div class="loading">No projects yet.</div>';
+    return;
+  }
+  document.getElementById('proj-list').innerHTML = projects.map(p => `
+    <div class="proj-card ${p.status}" id="card-${p.name}">
+      <div class="proj-top" onclick="toggle('${p.name}')">
+        <div>
+          <div class="proj-name">${p.name}</div>
+          <div class="proj-meta">${p.category} · updated ${fmtDate(p.lastUpdated)}</div>
+        </div>
+        <div class="proj-right">
+          <span class="badge ${p.status}">${p.status}</span>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+      <div class="proj-detail">
+        <div class="proj-summary">${p.summary || ''}</div>
+        <div class="proj-load-label">Load in session</div>
+        <div class="load-row">
+          <button class="load-chip" onclick="cpLoad('${p.name}','code')">⌨ Copy Terminal Cmd</button>
+          <button class="load-chip" onclick="cpLoad('${p.name}','chat')">💬 Copy Chat Load</button>
+        </div>
+        <div class="proj-load-label" style="margin-top:8px">Context preview</div>
+        <div class="context-preview" id="ctx-${p.name}">Loading…</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggle(name) {
+  const card = document.getElementById('card-'+name);
+  const isOpen = card.classList.contains('open');
+  document.querySelectorAll('.proj-card.open').forEach(c => c.classList.remove('open'));
+  if (!isOpen) {
+    card.classList.add('open');
+    const preview = document.getElementById('ctx-'+name);
+    if (preview.textContent === 'Loading…') {
+      try {
+        const d = await gw({action:'context.get', name});
+        preview.textContent = d.context || '(no context stored)';
+      } catch(e) {
+        preview.textContent = 'Failed to load context';
+      }
+    }
+  }
+}
+
+function cpLoad(name, mode) {
+  let text;
+  if (mode === 'code') {
+    text = `ctx-get ${name}`;
+  } else {
+    text = `Load my project context. CF Worker: ${GW} — Key: ${KEY} — Action: context.get — Name: ${name}`;
+  }
+  copyText(text, event.target);
+}
+
+// ── Helpers ──
+function cp(btn, text) { copyText(text, btn); }
+function copyText(text, btn) {
+  navigator.clipboard?.writeText(text).then(() => flash(btn)).catch(() => fallback(text, btn));
+  function fallback(t, b) {
+    const ta = document.createElement('textarea');
+    ta.value=t; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta); flash(b);
+  }
+  function flash(b) {
+    if (!b) return;
+    const orig = b.textContent; b.textContent='✓'; b.classList.add('ok');
+    setTimeout(()=>{b.textContent=orig; b.classList.remove('ok');}, 1500);
+  }
+}
+function open2(url) { window.open(url,'_blank'); }
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 2000);
+}
+
+loadProjects();
+</script>
+</body>
+</html>
