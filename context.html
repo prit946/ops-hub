@@ -192,6 +192,39 @@ main{max-width:680px;margin:0 auto;padding:24px 16px 60px}
   </div>
 </div>
 
+<!-- SAVE YOUR WORK -->
+<div class="sec">
+  <div class="sec-hdr">Save Your Work — End of Every Session</div>
+  <div style="background:var(--s1);border:1px solid var(--bd);border-radius:6px;overflow:hidden">
+
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:13px;font-weight:700">Best practice — always use this</span>
+        <span class="badge active" style="font-size:9px">Recommended</span>
+      </div>
+      <div class="code-block">save context for [project-name]<button class="copy-btn" onclick="cp(this,'save context for [project-name]')">copy</button></div>
+      <div style="font-size:11px;color:var(--mx);margin-top:6px">Pulls existing context, merges this session's work in, pushes back to KV. No deletion — old content is kept.</div>
+    </div>
+
+    <div style="padding:14px 16px;border-bottom:1px solid var(--bd)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Touched multiple projects this session</div>
+      <div class="code-block">save all<button class="copy-btn" onclick="cp(this,'save all')">copy</button></div>
+      <div style="font-size:11px;color:var(--mx);margin-top:6px">Saves every project worked on this session. Claude figures out which ones.</div>
+    </div>
+
+    <div style="padding:14px 16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">Shortcut (Claude infers the project)</div>
+      <div class="code-block">save context<button class="copy-btn" onclick="cp(this,'save context')">copy</button></div>
+      <div style="font-size:11px;color:var(--mx);margin-top:6px">Use only when one project was clearly active the whole session.</div>
+    </div>
+
+  </div>
+
+  <div style="background:rgba(232,160,32,.08);border:1px solid rgba(232,160,32,.25);border-radius:6px;padding:12px 14px;margin-top:10px;font-size:11px;color:var(--acc);line-height:1.6">
+    <strong>What Claude does:</strong> pulls your existing context → merges new work in (nothing deleted) → pushes merged version back to KV. One entry per project, always current.
+  </div>
+</div>
+
 <!-- PROJECTS -->
 <div class="sec">
   <div class="sec-hdr">Projects <span id="proj-count" style="color:var(--mn)"></span></div>
