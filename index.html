@@ -374,6 +374,29 @@ main{max-width:700px;margin:0 auto;padding:28px 16px 0}
     </div>
   </div>
 
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">Gemini Tool</span><span class="badge live">Live</span></div>
+      <div class="card-desc">Gemini chat interface — routes through CF gateway so API key stays private. Supports multi-turn chat, system prompts, model selector (Flash / Pro / Thinking). Use to offload work from Claude.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val" href="https://prit946.github.io/ops-hub/gemini.html" target="_blank">ops-hub/gemini.html</a><button class="copy" onclick="cp(this,'https://prit946.github.io/ops-hub/gemini.html')">⧉</button></div>
+        <div class="row"><span class="row-lbl">MODELS</span><span class="row-val muted">gemini-2.0-flash · 1.5-flash · 1.5-pro · 2.0-thinking</span></div>
+        <div class="row"><span class="row-lbl">KEY</span><span class="row-val muted">GEMINI_API_KEY — set in CF dashboard → spring-sea-ac0a</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card live">
+    <div class="card-body">
+      <div class="card-top"><span class="card-name">QA Dashboard</span><span class="badge live">Live</span></div>
+      <div class="card-desc">Auto-runs health checks on every site, CF Worker API, and data layer. Use after any deploy or update to confirm nothing broke. Runs on load — one click to re-run.</div>
+      <div class="rows">
+        <div class="row"><span class="row-lbl">URL</span><a class="row-val" href="https://prit946.github.io/ops-hub/qa.html" target="_blank">ops-hub/qa.html</a><button class="copy" onclick="cp(this,'https://prit946.github.io/ops-hub/qa.html')">⧉</button></div>
+        <div class="row"><span class="row-lbl">COVERS</span><span class="row-val muted">9 sites · 3 worker tests · 2 data checks</span></div>
+      </div>
+    </div>
+  </div>
+
   <div class="card pend">
     <div class="card-body">
       <div class="card-top"><span class="card-name">Brain OS — Render Deploy</span><span class="badge pend">Action needed</span></div>
