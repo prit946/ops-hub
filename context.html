@@ -152,8 +152,11 @@ main{max-width:680px;margin:0 auto;padding:24px 16px 60px}
     <div class="instr-step">
       <div class="step-num">3</div>
       <div class="step-body">
-        <div class="step-label">Session end — Claude saves automatically</div>
-        <div class="step-desc">Standing rule: Claude pushes updated context to KV at session end. You don't touch it.</div>
+        <div class="step-label">Session end — tell Claude to save</div>
+        <div class="step-desc">Claude does <strong>not</strong> auto-save. At the end of every session, type one of these:</div>
+        <div class="code-block" style="margin-top:6px">save context for store8181<button class="copy-btn" onclick="cp(this,'save context for store8181')">copy</button></div>
+        <div class="code-block" style="margin-top:6px">save all<button class="copy-btn" onclick="cp(this,'save all')">copy</button></div>
+        <div style="font-size:10px;color:var(--mn);margin-top:5px">First = explicit (recommended). Second = touched multiple projects. See "Save Your Work" section below for full options.</div>
       </div>
     </div>
     <div class="instr-step">
@@ -185,8 +188,11 @@ main{max-width:680px;margin:0 auto;padding:24px 16px 60px}
     <div class="instr-step">
       <div class="step-num">3</div>
       <div class="step-body">
-        <div class="step-label">Save context at session end</div>
-        <div class="step-desc">Tell Claude: <em>"Save context to KV"</em> — it formats everything and pushes to the gateway. Or just say <em>"save"</em>.</div>
+        <div class="step-label">Session end — tell Claude to save</div>
+        <div class="step-desc">Claude does <strong>not</strong> auto-save. At the end of every session, type one of these:</div>
+        <div class="code-block" style="margin-top:6px">save context for [project-name]<button class="copy-btn" onclick="cp(this,'save context for [project-name]')">copy</button></div>
+        <div class="code-block" style="margin-top:6px">save all<button class="copy-btn" onclick="cp(this,'save all')">copy</button></div>
+        <div style="font-size:10px;color:var(--mn);margin-top:5px">First = explicit (recommended). Second = touched multiple projects. See "Save Your Work" section below for full options.</div>
       </div>
     </div>
   </div>
