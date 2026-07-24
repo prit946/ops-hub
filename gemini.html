@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gemini Tool — prit946</title>
+<style>
+:root {
+  --bg:#0f1117;--s1:#161b27;--s2:#1e2535;--bd:#2a3247;
+  --tx:#e8eaf0;--mn:#8892a4;--mx:#b0bac8;
+  --gem:#4285f4;--gem2:#34a853;--acc:#8b5cf6;
+  --live:#22d37a;--err:#ef4444;--warn:#f59e0b;
+  --mono:'SF Mono','Fira Code',monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+:root[data-theme="light"] {
+  --bg:#f8f9fc;--s1:#ffffff;--s2:#f0f2f7;--bd:#dde1eb;
+  --tx:#0f1117;--mn:#6b7280;--mx:#374151;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px;height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.hdr{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--s1);border-bottom:1px solid var(--bd);flex-shrink:0}
+.hdr-logo{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,var(--gem),var(--gem2));display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff}
+.hdr-title{font-size:15px;font-weight:700;flex:1}
+.hdr-model{background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;color:var(--mx);cursor:pointer;font-family:inherit;appearance:none}
+.hdr-model:focus{outline:none;border-color:var(--gem)}
+.theme-btn{background:none;border:1px solid var(--bd);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--mn);cursor:pointer;font-family:inherit}
+
+/* Config bar */
+.config-bar{padding:8px 16px;background:var(--s1);border-bottom:1px solid var(--bd);flex-shrink:0;display:flex;gap:8px;align-items:center}
+.sys-toggle{background:none;border:1px solid var(--bd);border-radius:4px;padding:4px 10px;font-size:10px;font-weight:700;color:var(--mn);cursor:pointer;font-family:inherit;letter-spacing:.4px}
+.sys-toggle.active{border-color:var(--gem);color:var(--gem)}
+.sys-input{display:none;width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:6px 10px;font-size:11px;color:var(--tx);font-family:inherit;resize:none;margin-top:6px}
+.sys-input:focus{outline:none;border-color:var(--gem)}
+.sys-wrap{flex:1;display:flex;flex-direction:column}
+.quick-btns{display:flex;gap:6px;flex-wrap:wrap}
+.quick-btn{background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:var(--mn);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.quick-btn:hover{border-color:var(--gem);color:var(--gem)}
+
+/* Chat */
+.chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{display:flex;gap:10px;align-items:flex-start;max-width:820px}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.msg-avatar{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.msg.user .msg-avatar{background:var(--acc);color:#fff}
+.msg.ai .msg-avatar{background:linear-gradient(135deg,var(--gem),var(--gem2));color:#fff}
+.msg-bubble{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:10px 13px;font-size:13px;line-height:1.6;position:relative;max-width:680px}
+.msg.user .msg-bubble{background:var(--acc);border-color:transparent;color:#fff}
+.msg-actions{display:flex;gap:6px;margin-top:6px;opacity:0;transition:opacity .15s}
+.msg:hover .msg-actions{opacity:1}
+.msg-act-btn{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:3px 8px;font-size:9px;font-weight:700;cursor:pointer;color:var(--mn);font-family:inherit}
+.msg-act-btn:hover{border-color:var(--gem);color:var(--gem)}
+.msg-act-btn.ok{color:var(--live);border-color:var(--live)}
+.thinking{color:var(--mn);font-style:italic;font-size:12px}
+.thinking::after{content:'...';animation:dots 1.2s infinite}
+@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+.model-tag{font-size:9px;color:var(--mn);margin-top:4px;letter-spacing:.3px}
+
+/* Code blocks in responses */
+.msg-bubble pre{background:var(--s2);border:1px solid var(--bd);border-radius:4px;padding:8px 10px;margin:6px 0;font-family:var(--mono);font-size:11px;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.msg-bubble code{font-family:var(--mono);font-size:11px;background:var(--s2);padding:1px 5px;border-radius:3px}
+.msg-bubble p{margin-bottom:6px}
+.msg-bubble p:last-child{margin-bottom:0}
+
+/* Empty state */
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:var(--mn)}
+.empty-logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--gem),var(--gem2));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:900;color:#fff}
+.empty-title{font-size:18px;font-weight:700;color:var(--tx)}
+.empty-sub{font-size:12px;text-align:center;max-width:320px;line-height:1.6}
+
+/* Input area */
+.input-area{padding:12px 16px;background:var(--s1);border-top:1px solid var(--bd);flex-shrink:0}
+.input-row{display:flex;gap:10px;align-items:flex-end}
+.input-wrap{flex:1;background:var(--s2);border:1px solid var(--bd);border-radius:10px;display:flex;align-items:flex-end;padding:8px 12px;gap:8px;transition:border-color .15s}
+.input-wrap:focus-within{border-color:var(--gem)}
+textarea#msg-input{flex:1;background:none;border:none;color:var(--tx);font-size:13px;font-family:inherit;resize:none;outline:none;max-height:120px;line-height:1.5}
+textarea#msg-input::placeholder{color:var(--mn)}
+.char-count{font-size:10px;color:var(--mn);align-self:flex-end;flex-shrink:0}
+.send-btn{background:var(--gem);border:none;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;transition:background .15s;flex-shrink:0}
+.send-btn:hover{background:#5a9cf0}
+.send-btn:disabled{background:var(--bd);cursor:not-allowed}
+.input-footer{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:10px;color:var(--mn)}
+.clear-btn{background:none;border:none;color:var(--mn);cursor:pointer;font-size:10px;font-family:inherit}
+.clear-btn:hover{color:var(--err)}
+
+/* Toast */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;pointer-events:none;z-index:9999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Scrollbar */
+.chat::-webkit-scrollbar{width:4px}
+.chat::-webkit-scrollbar-track{background:transparent}
+.chat::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<header class="hdr">
+  <div class="hdr-logo">G</div>
+  <div class="hdr-title">Gemini Tool</div>
+  <select class="hdr-model" id="model-sel">
+    <option value="gemini-2.0-flash">gemini-2.0-flash (fast)</option>
+    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+    <option value="gemini-1.5-pro">gemini-1.5-pro (powerful)</option>
+    <option value="gemini-2.0-flash-thinking-exp">gemini-2.0-flash-thinking (reasoning)</option>
+  </select>
+  <button class="theme-btn" onclick="toggleTheme()">◐</button>
+</header>
+
+<div class="config-bar">
+  <div class="sys-wrap">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="sys-toggle" id="sys-toggle" onclick="toggleSys()">+ System Prompt</button>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="quickSend('Plan a project: ')">Plan project</button>
+        <button class="quick-btn" onclick="quickSend('Review this code and find issues:\n\n')">Review code</button>
+        <button class="quick-btn" onclick="quickSend('Explain this simply: ')">Explain</button>
+        <button class="quick-btn" onclick="quickSend('Write a quick ')">Quick write</button>
+        <button class="quick-btn" onclick="quickSend('Debug this: ')">Debug</button>
+      </div>
+    </div>
+    <textarea class="sys-input" id="sys-input" rows="2" placeholder="Optional system prompt — sets Gemini's role/behavior for this session"></textarea>
+  </div>
+</div>
+
+<div class="chat" id="chat">
+  <div class="empty" id="empty-state">
+    <div class="empty-logo">G</div>
+    <div class="empty-title">Gemini is ready</div>
+    <div class="empty-sub">Routes through your CF gateway — API key stays private. Use model selector to switch between fast and powerful modes.</div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <div class="input-wrap">
+      <textarea id="msg-input" rows="1" placeholder="Ask Gemini anything…" maxlength="32000" oninput="autoResize(this);updateCount(this)"></textarea>
+      <span class="char-count" id="char-count">0</span>
+    </div>
+    <button class="send-btn" id="send-btn" onclick="send()" title="Send (Cmd+Enter)">↑</button>
+  </div>
+  <div class="input-footer">
+    <span id="status-line">Cmd+Enter to send · gateway: spring-sea-ac0a.prit946.workers.dev</span>
+    <button class="clear-btn" onclick="clearChat()">✕ Clear</button>
+  </div>
+</div>
+
+<script>
+const GW = 'https://spring-sea-ac0a.prit946.workers.dev';
+const KEY = 'Store8181Prit2026';
+let messages = [];
+let busy = false;
+
+// Theme
+const root = document.documentElement;
+const saved = localStorage.getItem('gem-theme');
+if (saved) root.setAttribute('data-theme', saved);
+function toggleTheme() {
+  const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  const nxt = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', nxt);
+  localStorage.setItem('gem-theme', nxt);
+}
+
+// System prompt toggle
+function toggleSys() {
+  const inp = document.getElementById('sys-input');
+  const btn = document.getElementById('sys-toggle');
+  const show = inp.style.display !== 'block';
+  inp.style.display = show ? 'block' : 'none';
+  btn.textContent = show ? '− System Prompt' : '+ System Prompt';
+  btn.classList.toggle('active', show);
+  if (show) inp.focus();
+}
+
+// Quick prompts
+function quickSend(prefix) {
+  const t = document.getElementById('msg-input');
+  t.value = prefix;
+  t.focus();
+  autoResize(t);
+  updateCount(t);
+}
+
+// Textarea auto-resize
+function autoResize(t) {
+  t.style.height = 'auto';
+  t.style.height = Math.min(t.scrollHeight, 120) + 'px';
+}
+
+function updateCount(t) {
+  document.getElementById('char-count').textContent = t.value.length;
+}
+
+// Send
+async function send() {
+  if (busy) return;
+  const inp = document.getElementById('msg-input');
+  const text = inp.value.trim();
+  if (!text) return;
+
+  const model = document.getElementById('model-sel').value;
+  const sys = document.getElementById('sys-input').value.trim();
+
+  // Clear input
+  inp.value = '';
+  inp.style.height = 'auto';
+  updateCount(inp);
+
+  // Hide empty state
+  document.getElementById('empty-state')?.remove();
+
+  // Add user message
+  messages.push({ role: 'user', text });
+  renderMsg('user', text);
+
+  // Thinking indicator
+  const thinkId = addThinking();
+  busy = true;
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('status-line').textContent = 'Waiting for Gemini…';
+
+  try {
+    const res = await fetch(GW, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key: KEY,
+        action: 'gemini.chat',
+        messages: messages,
+        model,
+        ...(sys ? { system: sys } : {}),
+      }),
+    });
+    const d = await res.json();
+    removeThinking(thinkId);
+    if (!d.ok) throw new Error(d.error || 'Gemini error');
+    messages.push({ role: 'assistant', text: d.reply });
+    renderMsg('ai', d.reply, d.model || model);
+    document.getElementById('status-line').textContent = `Model: ${d.model || model} · Cmd+Enter to send`;
+  } catch (e) {
+    removeThinking(thinkId);
+    renderMsg('ai', `Error: ${e.message}`, null, true);
+    document.getElementById('status-line').textContent = 'Error — check that GEMINI_API_KEY is set in CF dashboard';
+  }
+
+  busy = false;
+  document.getElementById('send-btn').disabled = false;
+  inp.focus();
+}
+
+function renderMsg(role, text, model, isErr) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar';
+  avatar.textContent = role === 'user' ? 'P' : 'G';
+
+  const right = document.createElement('div');
+
+  const bubble = document.createElement('div');
+  bubble.className = 'msg-bubble';
+  if (isErr) bubble.style.borderColor = 'var(--err)';
+
+  // Simple markdown-ish rendering
+  bubble.innerHTML = formatText(text);
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'msg-act-btn';
+  copyBtn.textContent = 'copy';
+  copyBtn.onclick = () => {
+    navigator.clipboard.writeText(text);
+    copyBtn.textContent = 'copied!';
+    copyBtn.classList.add('ok');
+    setTimeout(() => { copyBtn.textContent = 'copy'; copyBtn.classList.remove('ok'); }, 1500);
+  };
+  actions.appendChild(copyBtn);
+
+  if (role === 'ai') {
+    const tag = document.createElement('div');
+    tag.className = 'model-tag';
+    tag.textContent = model || '';
+    right.appendChild(bubble);
+    right.appendChild(tag);
+    right.appendChild(actions);
+  } else {
+    right.appendChild(bubble);
+  }
+
+  div.appendChild(avatar);
+  div.appendChild(right);
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function formatText(t) {
+  // Code blocks
+  t = t.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Inline code
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  t = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // Line breaks to paragraphs
+  const paras = t.split(/\n\n+/);
+  return paras.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+}
+
+let thinkCount = 0;
+function addThinking() {
+  const id = 'think-' + (++thinkCount);
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.id = id;
+  div.className = 'msg ai';
+  div.innerHTML = `<div class="msg-avatar">G</div><div><div class="msg-bubble"><span class="thinking">Thinking</span></div></div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return id;
+}
+function removeThinking(id) {
+  document.getElementById(id)?.remove();
+}
+
+function clearChat() {
+  messages = [];
+  const chat = document.getElementById('chat');
+  chat.innerHTML = `<div class="empty" id="empty-state">
+    <div class="empty-logo">G</div>
+    <div class="empty-title">Gemini is ready</div>
+    <div class="empty-sub">Routes through your CF gateway — API key stays private.</div>
+  </div>`;
+}
+
+// Keyboard
+document.getElementById('msg-input').addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+});
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+</script>
+</body>
+</html>
