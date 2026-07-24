@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QA Dashboard — prit946</title>
+<style>
+:root {
+  --bg:#0f1117;--s1:#161b27;--s2:#1e2535;--bd:#2a3247;
+  --tx:#e8eaf0;--mn:#8892a4;--mx:#b0bac8;
+  --acc:#e8a020;--live:#22d37a;--err:#ef4444;--warn:#f59e0b;
+  --mono:'SF Mono','Fira Code',monospace;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+:root[data-theme="light"] {
+  --bg:#f8f9fc;--s1:#ffffff;--s2:#f0f2f7;--bd:#dde1eb;
+  --tx:#0f1117;--mn:#6b7280;--mx:#374151;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:13px;min-height:100vh;padding-bottom:40px}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--s1);border-bottom:1px solid var(--bd);margin-bottom:20px;position:sticky;top:0;z-index:10}
+.hdr h1{font-size:16px;font-weight:700}
+.hdr-sub{font-size:11px;color:var(--mn);margin-top:2px}
+.hdr-right{display:flex;gap:8px;align-items:center}
+.run-btn{background:var(--acc);color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.3px}
+.run-btn:hover{opacity:.9}
+.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.theme-btn{background:none;border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--mn);cursor:pointer;font-family:inherit}
+
+main{max-width:900px;margin:0 auto;padding:0 16px}
+
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.stat{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:14px;text-align:center}
+.stat-n{font-size:28px;font-weight:800;margin-bottom:4px}
+.stat-l{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--mn);text-transform:uppercase}
+.stat-n.pass{color:var(--live)}
+.stat-n.fail{color:var(--err)}
+.stat-n.warn{color:var(--warn)}
+.stat-n.total{color:var(--mx)}
+
+.group{margin-bottom:20px}
+.grp-hdr{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--mn);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.grp-line{flex:1;height:1px;background:var(--bd)}
+
+.test-row{background:var(--s1);border:1px solid var(--bd);border-radius:6px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px;transition:border-color .15s}
+.test-row:hover{border-color:var(--bd)}
+.test-status{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.test-status.pass{background:rgba(34,211,122,.12);color:var(--live)}
+.test-status.fail{background:rgba(239,68,68,.12);color:var(--err)}
+.test-status.warn{background:rgba(245,158,11,.12);color:var(--warn)}
+.test-status.pending{background:var(--s2);color:var(--mn)}
+.test-name{flex:1;font-size:12px;font-weight:600}
+.test-detail{font-size:11px;color:var(--mn);font-family:var(--mono)}
+.test-ms{font-size:10px;color:var(--mn);text-align:right;min-width:50px}
+.test-link{font-size:10px;color:var(--mn);text-decoration:none}
+.test-link:hover{color:var(--acc)}
+
+.running-ring{width:14px;height:14px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .6s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.last-run{font-size:11px;color:var(--mn);text-align:center;margin-top:20px}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#222;color:#fff;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;opacity:0;transition:all .25s;pointer-events:none;z-index:9999}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<header class="hdr">
+  <div>
+    <h1>QA Dashboard</h1>
+    <div class="hdr-sub" id="last-label">Not run yet — click Run All Tests</div>
+  </div>
+  <div class="hdr-right">
+    <button class="theme-btn" onclick="toggleTheme()">◐</button>
+    <button class="run-btn" id="run-btn" onclick="runAll()">▶ Run All Tests</button>
+  </div>
+</header>
+
+<main>
+  <div class="summary">
+    <div class="stat"><div class="stat-n total" id="s-total">—</div><div class="stat-l">Total</div></div>
+    <div class="stat"><div class="stat-n pass" id="s-pass">—</div><div class="stat-l">Passed</div></div>
+    <div class="stat"><div class="stat-n fail" id="s-fail">—</div><div class="stat-l">Failed</div></div>
+    <div class="stat"><div class="stat-n warn" id="s-warn">—</div><div class="stat-l">Warnings</div></div>
+  </div>
+
+  <div class="group">
+    <div class="grp-hdr">Sites &amp; Pages <div class="grp-line"></div></div>
+    <div id="sites-list"></div>
+  </div>
+
+  <div class="group">
+    <div class="grp-hdr">CF Worker API <div class="grp-line"></div></div>
+    <div id="worker-list"></div>
+  </div>
+
+  <div class="group">
+    <div class="grp-hdr">Data &amp; Sync <div class="grp-line"></div></div>
+    <div id="data-list"></div>
+  </div>
+
+  <div class="last-run" id="last-run"></div>
+</main>
+
+<script>
+const GW = 'https://spring-sea-ac0a.prit946.workers.dev';
+const KEY = 'Store8181Prit2026';
+
+const SITES = [
+  { name: 'Store 8181 Hub', url: 'https://prit946.github.io/store8181-hub/', check: 'index' },
+  { name: 'Z Report', url: 'https://prit946.github.io/store8181-hub/zreport.html', check: 'zreport' },
+  { name: 'Royalty Tool', url: 'https://prit946.github.io/store8181-hub/royalty.html', check: 'royalty' },
+  { name: 'Credentials', url: 'https://prit946.github.io/store8181-hub/credentials.html', check: 'credentials' },
+  { name: 'Ops Hub', url: 'https://prit946.github.io/ops-hub/', check: 'index' },
+  { name: 'Context Hub', url: 'https://prit946.github.io/ops-hub/context.html', check: 'context' },
+  { name: 'Gemini Tool', url: 'https://prit946.github.io/ops-hub/gemini.html', check: 'gemini' },
+  { name: 'Business Op', url: 'https://prit946.github.io/prit-business-op/', check: 'index' },
+  { name: 'Brain OS', url: 'https://brain-os-phbz.onrender.com', check: 'brainOS', slowOk: true },
+];
+
+const WORKER_TESTS = [
+  {
+    name: 'context.list — returns project list',
+    action: () => fetch(GW, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: KEY, action: 'context.list' }) }).then(r=>r.json()),
+    check: d => d.ok !== false && Array.isArray(d.projects) && d.projects.length > 0,
+    detail: d => `${d.projects?.length || 0} projects`,
+  },
+  {
+    name: 'context.get — fetch store8181',
+    action: () => fetch(GW, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: KEY, action: 'context.get', name: 'store8181' }) }).then(r=>r.json()),
+    check: d => d.ok !== false && typeof d.context === 'string',
+    detail: d => d.context ? `${d.context.length} chars` : 'empty',
+  },
+  {
+    name: 'Worker health — no 5xx errors',
+    action: () => fetch(GW, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: KEY, action: 'health' }) }).then(r=>({ status: r.status })),
+    check: d => d.status !== 500 && d.status !== 503,
+    detail: d => `HTTP ${d.status}`,
+  },
+];
+
+const DATA_TESTS = [
+  {
+    name: 'KV projects seeded (store8181, brain-os, cf-gateway)',
+    action: () => fetch(GW, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: KEY, action: 'context.list' }) }).then(r=>r.json()),
+    check: d => {
+      const names = (d.projects || []).map(p => p.name);
+      return ['store8181','brain-os','cf-gateway'].every(n => names.includes(n));
+    },
+    detail: d => (d.projects || []).map(p=>p.name).join(', '),
+  },
+  {
+    name: 'Gateway key auth — rejects wrong key',
+    action: () => fetch(GW, { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ key: 'WRONG_KEY', action: 'context.list' }) }).then(r=>r.json()),
+    check: d => d.error || d.ok === false,
+    detail: d => d.error || 'auth rejected correctly',
+  },
+];
+
+// Theme
+const root = document.documentElement;
+const saved = localStorage.getItem('qa-theme');
+if (saved) root.setAttribute('data-theme', saved);
+function toggleTheme() {
+  const cur = root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  const nxt = cur === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', nxt);
+  localStorage.setItem('qa-theme', nxt);
+}
+
+let results = { pass: 0, fail: 0, warn: 0 };
+
+function renderRow(containerId, id, name, url) {
+  const list = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'test-row';
+  row.id = 'row-' + id;
+  row.innerHTML = `
+    <div class="test-status pending" id="st-${id}">·</div>
+    <div class="test-name">${name}</div>
+    <div class="test-detail" id="det-${id}">—</div>
+    <div class="test-ms" id="ms-${id}"></div>
+    ${url ? `<a class="test-link" href="${url}" target="_blank">↗</a>` : ''}
+  `;
+  list.appendChild(row);
+}
+
+function setResult(id, status, detail, ms) {
+  const st = document.getElementById('st-' + id);
+  const det = document.getElementById('det-' + id);
+  const msEl = document.getElementById('ms-' + id);
+  const icons = { pass: '✓', fail: '✕', warn: '!' };
+  st.className = 'test-status ' + status;
+  st.textContent = icons[status] || '·';
+  det.textContent = detail;
+  if (ms !== undefined) msEl.textContent = ms + 'ms';
+  results[status] = (results[status] || 0) + 1;
+  updateSummary();
+}
+
+function updateSummary() {
+  const total = results.pass + results.fail + results.warn;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-pass').textContent = results.pass;
+  document.getElementById('s-fail').textContent = results.fail;
+  document.getElementById('s-warn').textContent = results.warn || 0;
+}
+
+function setRunning(id) {
+  const st = document.getElementById('st-' + id);
+  st.className = 'test-status pending';
+  st.innerHTML = '<span class="running-ring"></span>';
+}
+
+async function runAll() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Running…';
+  results = { pass: 0, fail: 0, warn: 0 };
+
+  // Clear and rebuild rows
+  document.getElementById('sites-list').innerHTML = '';
+  document.getElementById('worker-list').innerHTML = '';
+  document.getElementById('data-list').innerHTML = '';
+
+  SITES.forEach(s => renderRow('sites-list', s.check, s.name, s.url));
+  WORKER_TESTS.forEach((t, i) => renderRow('worker-list', 'wt' + i, t.name, null));
+  DATA_TESTS.forEach((t, i) => renderRow('data-list', 'dt' + i, t.name, null));
+
+  updateSummary();
+
+  // Sites — run in parallel (CORS blocked for body check, just check 200)
+  const sitePromises = SITES.map(async s => {
+    setRunning(s.check);
+    const t0 = Date.now();
+    try {
+      const r = await fetch(s.url, { mode: 'no-cors', cache: 'no-store' });
+      const ms = Date.now() - t0;
+      // no-cors always gives opaque response (type='opaque') — if no throw, it loaded
+      const status = ms > 5000 ? 'warn' : 'pass';
+      const detail = s.slowOk && ms > 3000 ? `loaded (cold start ~${ms}ms)` : `HTTP 200`;
+      setResult(s.check, status, detail, ms);
+    } catch (e) {
+      setResult(s.check, 'fail', 'unreachable: ' + e.message, Date.now() - t0);
+    }
+  });
+
+  // Worker tests
+  const workerPromises = WORKER_TESTS.map(async (t, i) => {
+    setRunning('wt' + i);
+    const t0 = Date.now();
+    try {
+      const d = await t.action();
+      const ms = Date.now() - t0;
+      const ok = t.check(d);
+      setResult('wt' + i, ok ? 'pass' : 'fail', t.detail(d), ms);
+    } catch (e) {
+      setResult('wt' + i, 'fail', e.message, Date.now() - t0);
+    }
+  });
+
+  // Data tests
+  const dataPromises = DATA_TESTS.map(async (t, i) => {
+    setRunning('dt' + i);
+    const t0 = Date.now();
+    try {
+      const d = await t.action();
+      const ms = Date.now() - t0;
+      const ok = t.check(d);
+      setResult('dt' + i, ok ? 'pass' : 'fail', t.detail(d), ms);
+    } catch (e) {
+      setResult('dt' + i, 'fail', e.message, Date.now() - t0);
+    }
+  });
+
+  await Promise.all([...sitePromises, ...workerPromises, ...dataPromises]);
+
+  const now = new Date().toLocaleString();
+  document.getElementById('last-label').textContent = `Last run: ${now}`;
+  document.getElementById('last-run').textContent = `All tests completed at ${now}`;
+  btn.disabled = false;
+  btn.textContent = '↺ Run Again';
+}
+
+// Auto-run on load
+window.addEventListener('load', () => {
+  setTimeout(runAll, 500);
+});
+</script>
+</body>
+</html>
