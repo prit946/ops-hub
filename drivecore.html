@@ -159,6 +159,22 @@ select.field{cursor:pointer}
 /* Danger */
 .danger{padding:16px}
 .danger-lbl{font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:12px}
+/* Review cards */
+.rv-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--r);padding:12px 14px;margin-bottom:10px}
+.rv-name{font-size:13px;font-weight:600;margin-bottom:3px;word-break:break-all}
+.rv-path{font-size:10px;color:var(--muted);font-family:var(--mono);margin-bottom:4px;word-break:break-all}
+.rv-suggested{font-size:10px;color:var(--text2);margin-bottom:2px}
+.rv-reason{font-size:11px;color:var(--text2);font-style:italic;margin-bottom:8px}
+.rv-actions{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.rv-learn{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:4px}
+.rv-learn input[type=text]{flex:1;padding:4px 8px;font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--mono)}
+.rv-learn input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent)}
+/* Rule rows */
+.rule-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px}
+.rule-pat{font-family:var(--mono);color:var(--accent);min-width:80px}
+.rule-dest{color:var(--text2);flex:1;word-break:break-all}
+.rule-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 6px;font-size:13px;border-radius:3px}
+.rule-del:hover{color:var(--red);background:rgba(239,68,68,.1)}
 </style>
 </head>
 <body>
@@ -316,6 +332,21 @@ select.field{cursor:pointer}
     </div>
     <div id="log"><span class="ll ll-dim">No runs yet. Tap "Scan Drive Now" in Step 2 above.</span></div>
   </div>
+
+  <!-- PENDING REVIEW -->
+  <div class="sec" id="review-sec" style="display:none">
+    <div class="sec-hdr">
+      <span>Pending Review</span>
+      <div style="display:flex;gap:6px">
+        <span id="rev-count" style="font-size:10px;color:var(--muted);align-self:center"></span>
+        <button class="btn btn-s btn-sm" id="btn-load-review">Load</button>
+      </div>
+    </div>
+    <div style="padding:10px 14px 4px;font-size:11px;color:var(--muted);line-height:1.5">
+      Files DriveCore couldn't confidently classify — decide where each goes. Checking "Teach DriveCore" saves the rule permanently so it never asks again.
+    </div>
+    <div id="review-list" style="padding:0 12px 12px"></div>
+  </div>
 </div>
 
 <!-- SETTINGS DRAWER -->
@@ -344,10 +375,10 @@ select.field{cursor:pointer}
       <div class="s-lbl">Gemini API (Free Tier)</div>
       <div class="s-row col">
         <div class="s-name">AI Studio API Key</div>
-        <div class="s-hint">Free key at aistudio.google.com/app/apikey · Gemini 1.5 Flash · 15 RPM / 1M tokens/day</div>
-        <input type="password" class="field mono" id="gem-key" placeholder="AIza…" autocomplete="off">
-        <div class="sdot"><div class="sdot-c" id="gem-dot"></div><span id="gem-txt">Not configured</span></div>
-        <button class="btn btn-s btn-sm" id="btn-gem" style="margin-top:8px">Save Key</button>
+        <div class="s-hint">Free key at <strong>aistudio.google.com/app/apikey</strong> — saved to CF Worker KV, works from any device forever · Gemini 1.5 Flash · 15 RPM / 1M tokens/day</div>
+        <input type="password" class="field mono" id="gem-key" placeholder="Paste key here — saved permanently to cloud" autocomplete="off">
+        <div class="sdot"><div class="sdot-c" id="gem-dot"></div><span id="gem-txt">Checking…</span></div>
+        <button class="btn btn-s btn-sm" id="btn-gem" style="margin-top:8px">Save to CF Worker</button>
       </div>
     </div>
 
@@ -398,6 +429,35 @@ select.field{cursor:pointer}
         <input type="password" class="pin-in" id="pin-cf" maxlength="6" placeholder="Confirm new" inputmode="numeric">
         <button class="btn btn-s btn-fw" id="btn-pin" style="margin-top:10px">Update PIN</button>
         <div class="lk-msg" id="pin-msg" style="margin-top:6px"></div>
+      </div>
+    </div>
+
+    <!-- Session Prompt -->
+    <div class="s-sec">
+      <div class="s-lbl">Session Prompt (Permanent)</div>
+      <div class="s-row col">
+        <div class="s-name">Claude Context — paste at session start</div>
+        <div class="s-hint">Pre-written prompt so you or Claude never need to remember how this tool works. Copy it at the start of any session.</div>
+        <textarea class="field mono" id="sess-prompt" rows="6" style="font-size:10px;line-height:1.5;resize:vertical" readonly></textarea>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button class="btn btn-s btn-sm" id="btn-copy-prompt">Copy Prompt</button>
+          <button class="btn btn-s btn-sm" id="btn-save-prompt">Save to KV</button>
+        </div>
+        <div class="sdot" style="margin-top:6px"><div class="sdot-c" id="prompt-dot"></div><span id="prompt-txt">—</span></div>
+      </div>
+    </div>
+
+    <!-- Learned Rules -->
+    <div class="s-sec">
+      <div class="s-lbl">Learned Rules (<span id="rules-count">—</span>)</div>
+      <div class="s-row col">
+        <div class="s-hint">Rules DriveCore has learned from your decisions — highest priority routing, checked before all built-in patterns.</div>
+        <div id="rules-list" style="max-height:140px;overflow-y:auto;margin-top:6px"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <input type="text" class="field" id="rule-pattern" placeholder="Keyword (e.g. invoice, irs, payroll)" style="flex:1;font-size:12px">
+          <input type="text" class="field" id="rule-dest" placeholder="Folder path" style="flex:2;font-size:12px">
+        </div>
+        <button class="btn btn-s btn-sm btn-fw" id="btn-add-rule" style="margin-top:6px">Add Rule</button>
       </div>
     </div>
 
@@ -613,13 +673,17 @@ document.getElementById('btn-taxonomy').addEventListener('click',async()=>{
   log('Building taxonomy — rules first, then Gemini for ambiguous files…','info');
   log('This may take 2–5 min depending on Drive size and Gemini quota.','dim');
   try{
-    const cfg=S.get('settings')||{};
-    const d=await cf({action:'gas.proxy',gasAction:'dc.taxonomy',params:{gemKey:cfg.gemKey||''}});
+    const d=await cf({action:'gas.proxy',gasAction:'dc.taxonomy'});
     if(d.ok){
       log('✓ Taxonomy done: '+d.total+' files — '+d.moves+' to move, '+d.keeps+' already correct, '+d.reviews+' need review','ok');
       log('  '+d.geminiClassified+' files classified by Gemini','dim');
       log('  Plan saved → Drive/DriveCore/'+d.planFileName,'ok');
-      log('  Review the plan in Drive, then run Dry Run or Execute.','info');
+      if(d.reviews>0){
+        log('  '+d.reviews+' files need your review — see Pending Review section below ↓','warn');
+        document.getElementById('review-sec').style.display='';
+        document.getElementById('rev-count').textContent=d.reviews+' pending';
+      }
+      log('  Run Dry Run next to preview all moves before anything changes.','info');
       const st=S.get('stats')||{};st.pending=d.moves;S.set('stats',st);loadStats();
     }else{log('Taxonomy failed: '+(d.error||JSON.stringify(d)),'err');}
   }catch(e){log('Error: '+e.message,'err');}
@@ -718,6 +782,32 @@ document.getElementById('btn-settings').addEventListener('click',sOpen);
 document.getElementById('s-x').addEventListener('click',sClose);
 document.getElementById('s-ov').addEventListener('click',sClose);
 
+const DC_PROMPT=`DriveCore session context — paste this at the start of any Claude session:
+
+PROJECT: DriveCore (personal Google Drive auto-organizer for Prit, prit946@gmail.com)
+CF Worker: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+GAS Script ID: 1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf (deployed v53+)
+DriveCore page: https://prit946.github.io/ops-hub/drivecore.html (PIN protected)
+GAS Web App URL: stored in CF Worker KV under _gas_url (call gas.getUrl to retrieve)
+Gemini Key: stored in CF Worker KV under _gemini_key (auto-injected in gas.proxy calls)
+Weekly trigger: dcOngoing() runs every Sunday 2am via GAS time trigger
+
+DRIVE STRUCTURE (all folders use () descriptions):
+01_Business (business entities) / Store 8181 (UPS Store #8181 — Joelton TN, franchise operations) / Finance, HR, Admin, Technology
+01_Business / Dairy Queen (former DQ franchise — sold 2023, historical records only)
+02_Real_Estate (property investments — IL primary home, IL rental 1, IL rental 2)
+03_Personal (Prit) / 01_Finance, 02_Health, 03_IDs & Legal, 05_Travel, 07_Vehicles
+04_Family & Admin (family members) / Pravin (Prit's dad — IL primary home, 2 IL rentals, personal finance, health)
+Archive (archived — old versions, stale files, superseded docs)
+DriveCore/ (working folder — plans, manifests, logs — do not move)
+
+WORKFLOW: Scan Drive (dc.manifest) → Build Taxonomy (dc.taxonomy, Gemini classifies ambiguous) → Dry Run (dc.execute dryRun:true) → Review Pending items → Execute (dc.execute) → Weekly auto-runs (dcOngoing)
+RULES: Learned rules stored in GAS Script Properties as DC_LEARNED_RULES JSON. Never permanently deletes — archive-only policy.
+
+ops-hub repo: prit946/ops-hub (GitHub Pages main branch)
+gateway-worker repo: prit946/claude-gateway-worker (deploys to CF on push to master)
+GAS gateway: ~/Projects/Claude/automations/gas-gateway/Code.js (clasp push + deploy to update)`;
+
 function loadSettingsUI(){
   const cfg=S.get('settings')||{};
   document.getElementById('sl-arch').value=cfg.archiveMo??6;
@@ -725,14 +815,75 @@ function loadSettingsUI(){
   document.getElementById('sel-name').value=cfg.namingFmt||'date-title';
   document.getElementById('tog-wh').checked=cfg.webhook||false;
   document.getElementById('sel-lock').value=cfg.autolock??30;
-  if(cfg.gemKey){document.getElementById('gem-key').value='•'.repeat(20);sdot('gem-dot','gem-txt','green','Key saved ✓');}
+
+  // Gemini key — check CF Worker (permanent storage)
+  sdot('gem-dot','gem-txt','amber','Checking…');
+  cf({action:'gemini.check'}).then(d=>{
+    if(d.configured){sdot('gem-dot','gem-txt','green','Stored in CF Worker ✓ ('+d.prefix+')');}
+    else{sdot('gem-dot','gem-txt','amber','Not set — paste key above');}
+  }).catch(()=>sdot('gem-dot','gem-txt','red','CF Worker unreachable'));
+
+  // GAS URL
   cf({action:'gas.getUrl'}).then(d=>{
     if(d.configured){
       document.getElementById('gas-url').value=d.url||d.preview||'';
       sdot('gas-dot','gas-txt','green','Saved in CF Worker ✓');
     }else{sdot('gas-dot','gas-txt','amber','Not set');}
   }).catch(()=>{});
+
+  // Session prompt
+  document.getElementById('sess-prompt').value=DC_PROMPT;
+  sdot('prompt-dot','prompt-txt','green','Ready to copy');
+
+  // Learned rules
+  loadRules();
 }
+
+async function loadRules(){
+  const d=await cf({action:'gas.proxy',gasAction:'dc.getRules'}).catch(()=>({ok:false}));
+  const list=document.getElementById('rules-list');
+  const cnt=document.getElementById('rules-count');
+  if(!d.ok||!d.rules){list.innerHTML='<div style="color:var(--muted);font-size:11px">Could not load rules</div>';return;}
+  cnt.textContent=d.totalRules;
+  if(!d.rules.length){list.innerHTML='<div style="color:var(--muted);font-size:11px">No learned rules yet — make decisions in Pending Review to teach DriveCore.</div>';return;}
+  list.innerHTML=d.rules.map((r,i)=>`
+    <div class="rule-row">
+      <span class="rule-pat">${r.pattern}</span>
+      <span class="rule-dest">→ ${r.dest}</span>
+      <button class="rule-del" data-pattern="${r.pattern}" title="Remove rule">✕</button>
+    </div>`).join('');
+  list.querySelectorAll('.rule-del').forEach(b=>{
+    b.addEventListener('click',async()=>{
+      await cf({action:'gas.proxy',gasAction:'dc.learnRule',params:{pattern:b.dataset.pattern,remove:true}});
+      loadRules();
+    });
+  });
+}
+
+// Copy session prompt
+document.getElementById('btn-copy-prompt').addEventListener('click',()=>{
+  navigator.clipboard.writeText(DC_PROMPT).then(()=>toast('Session prompt copied — paste at start of any Claude session.')).catch(()=>{
+    document.getElementById('sess-prompt').select();document.execCommand('copy');toast('Copied!');
+  });
+});
+
+// Save prompt to CF Worker KV
+document.getElementById('btn-save-prompt').addEventListener('click',async()=>{
+  sdot('prompt-dot','prompt-txt','amber','Saving…');
+  const d=await cf({action:'context.set',name:'drivecore',context:DC_PROMPT}).catch(()=>({ok:false}));
+  if(d.ok||d.success)sdot('prompt-dot','prompt-txt','green','Saved to CF Worker KV ✓');
+  else sdot('prompt-dot','prompt-txt','red','Save failed');
+});
+
+// Add learned rule manually
+document.getElementById('btn-add-rule').addEventListener('click',async()=>{
+  const pat=document.getElementById('rule-pattern').value.trim();
+  const dest=document.getElementById('rule-dest').value.trim();
+  if(!pat||!dest)return toast('Enter both a keyword and folder path.');
+  const d=await cf({action:'gas.proxy',gasAction:'dc.learnRule',params:{pattern:pat,dest}}).catch(()=>({ok:false}));
+  if(d.ok){document.getElementById('rule-pattern').value='';document.getElementById('rule-dest').value='';loadRules();toast('Rule added ✓');}
+  else toast('Failed to add rule');
+});
 
 function saveCfg(){
   const cfg=S.get('settings')||{};
@@ -758,13 +909,18 @@ document.getElementById('btn-gas').addEventListener('click',async()=>{
   else sdot('gas-dot','gas-txt','red','Save failed');
 });
 
-// Save Gemini key
-document.getElementById('btn-gem').addEventListener('click',()=>{
+// Save Gemini key → CF Worker KV (permanent, any device)
+document.getElementById('btn-gem').addEventListener('click',async()=>{
   const val=document.getElementById('gem-key').value.trim();
-  if(!val||val.startsWith('•'))return;
-  const cfg=S.get('settings')||{};cfg.gemKey=val;S.set('settings',cfg);
-  document.getElementById('gem-key').value='•'.repeat(20);
-  sdot('gem-dot','gem-txt','green','Key saved ✓');toast('Gemini key saved.');
+  if(!val||val.startsWith('•')||val.startsWith('•'))return;
+  sdot('gem-dot','gem-txt','amber','Saving…');
+  const d=await cf({action:'gemini.setKey',apiKey:val}).catch(()=>({ok:false}));
+  if(d.ok){
+    document.getElementById('gem-key').value='';
+    document.getElementById('gem-key').placeholder='Key saved to CF Worker ✓';
+    sdot('gem-dot','gem-txt','green','Saved to CF Worker ✓ — works on all devices');
+    toast('Gemini key saved permanently to CF Worker.');
+  } else sdot('gem-dot','gem-txt','red','Save failed — try again');
 });
 
 // Change PIN
@@ -788,6 +944,81 @@ document.getElementById('btn-reset').addEventListener('click',()=>{
   ['stats','settings','pin_hash'].forEach(k=>S.rm(k));
   location.reload();
 });
+
+// ── PENDING REVIEW ───────────────────────────────────
+document.getElementById('btn-load-review').addEventListener('click',loadReview);
+
+async function loadReview(){
+  const btn=document.getElementById('btn-load-review');
+  btn.disabled=true;btn.textContent='Loading…';
+  const list=document.getElementById('review-list');
+  list.innerHTML='<div style="color:var(--muted);font-size:12px;padding:8px 0">Loading review items…</div>';
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.getReview'});
+    if(!d.ok||!d.items){list.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px 0">'+(d.error||'Failed to load')+'</div>';return;}
+    document.getElementById('rev-count').textContent=d.total+' pending · '+d.planDate;
+    if(!d.items.length){list.innerHTML='<div style="color:var(--green);font-size:12px;padding:10px 0">✓ No pending review items — all files classified!</div>';return;}
+    list.innerHTML='';
+    d.items.forEach(item=>{
+      const card=document.createElement('div');
+      card.className='rv-card';
+      card.id='rv-'+item.fileId;
+      const suggestedPath=item.dest&&item.dest!=='review'?item.dest:'';
+      card.innerHTML=`
+        <div class="rv-name">${item.name}</div>
+        <div class="rv-path">📁 ${item.currentPath||'Unknown location'}</div>
+        ${suggestedPath?`<div class="rv-suggested">Suggested → <strong>${suggestedPath}</strong></div>`:'<div class="rv-suggested" style="color:var(--muted)">No suggestion — DriveCore needs your input</div>'}
+        <div class="rv-reason">${item.reason||''}</div>
+        <div class="rv-actions">
+          ${suggestedPath?`<button class="btn btn-p btn-sm rv-approve" data-id="${item.fileId}" data-dest="${suggestedPath}">✓ Move as suggested</button>`:''}
+          <button class="btn btn-s btn-sm rv-archive" data-id="${item.fileId}">⬇ Archive</button>
+          <button class="btn btn-s btn-sm rv-custom" data-id="${item.fileId}">✎ Custom path</button>
+        </div>
+        <div class="rv-learn">
+          <input type="checkbox" class="rv-chk" id="chk-${item.fileId}">
+          <label for="chk-${item.fileId}" style="font-size:11px">Teach DriveCore:</label>
+          <input type="text" class="rv-pat" placeholder="keyword to match" value="${item.name.split(/[\s_\-\.]/)[0].toLowerCase()}" style="max-width:140px">
+          <span style="font-size:10px;color:var(--muted)">→ applies rule to all future files with this keyword</span>
+        </div>
+        <textarea class="field" rows="2" placeholder="Notes (optional — add context for this decision)" style="width:100%;margin-top:8px;font-size:11px;resize:none" id="note-${item.fileId}"></textarea>`;
+      list.appendChild(card);
+
+      // Approve
+      const approveBtn=card.querySelector('.rv-approve');
+      if(approveBtn) approveBtn.addEventListener('click',()=>decide(item.fileId,suggestedPath,card));
+
+      // Archive
+      card.querySelector('.rv-archive').addEventListener('click',()=>decide(item.fileId,null,card,'reject'));
+
+      // Custom path
+      card.querySelector('.rv-custom').addEventListener('click',()=>{
+        const dest=prompt('Enter folder path:\n\nExample: 03_Personal (Prit)/01_Finance (personal banking, investments, credit cards, personal taxes)');
+        if(dest&&dest.trim())decide(item.fileId,dest.trim(),card,'custom');
+      });
+    });
+  }catch(e){list.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px 0">Error: '+e.message+'</div>';}
+  btn.disabled=false;btn.textContent='Refresh';
+}
+
+async function decide(fileId,dest,card,action){
+  action=action||(dest?'approve':'reject');
+  const note=document.getElementById('note-'+fileId)?.value||'';
+  const chk=card.querySelector('.rv-chk');
+  const patInput=card.querySelector('.rv-pat');
+  const learnPattern=(chk?.checked&&patInput?.value.trim())?patInput.value.trim():'';
+  card.style.opacity='0.5';card.style.pointerEvents='none';
+  const d=await cf({action:'gas.proxy',gasAction:'dc.decide',params:{fileId,action,dest,learnPattern,note}}).catch(()=>({ok:false}));
+  if(d.ok){
+    card.style.border='1px solid var(--green)';
+    card.style.borderLeft='3px solid var(--green)';
+    const label=action==='reject'?'Archived':('Moved → '+(dest||'Archive'));
+    card.querySelector('.rv-actions').innerHTML=`<span style="color:var(--green);font-size:12px;font-weight:600">✓ ${label}${d.ruleAdded?' · Rule saved':''}`;
+    if(d.ruleAdded)toast('Rule saved: "'+learnPattern+'" → '+dest);
+  }else{
+    card.style.opacity='1';card.style.pointerEvents='';
+    toast('Decision failed: '+(d.error||'unknown error'));
+  }
+}
 
 initLock();
 </script>
