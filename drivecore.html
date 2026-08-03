@@ -333,7 +333,7 @@ select.field{cursor:pointer}
       <div class="s-row col">
         <div class="s-name">GAS Web App URL</div>
         <div class="s-hint">Deploy Apps Script as web app → paste URL here once. Saved to CF Worker KV — works from any device, any browser.</div>
-        <input type="url" class="field mono" id="gas-url" placeholder="https://script.google.com/macros/s/…" autocomplete="off" spellcheck="false">
+        <input type="text" class="field mono" id="gas-url" placeholder="https://script.google.com/macros/s/…" autocomplete="off" spellcheck="false" inputmode="url">
         <div class="sdot"><div class="sdot-c" id="gas-dot"></div><span id="gas-txt">Checking…</span></div>
         <button class="btn btn-s btn-sm" id="btn-gas" style="margin-top:8px">Save URL to CF Worker</button>
       </div>
@@ -728,7 +728,7 @@ function loadSettingsUI(){
   if(cfg.gemKey){document.getElementById('gem-key').value='•'.repeat(20);sdot('gem-dot','gem-txt','green','Key saved ✓');}
   cf({action:'gas.getUrl'}).then(d=>{
     if(d.configured){
-      document.getElementById('gas-url').placeholder=d.preview;
+      document.getElementById('gas-url').value=d.url||d.preview||'';
       sdot('gas-dot','gas-txt','green','Saved in CF Worker ✓');
     }else{sdot('gas-dot','gas-txt','amber','Not set');}
   }).catch(()=>{});
