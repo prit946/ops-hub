@@ -431,6 +431,8 @@ let pinBuf='';
 const KEYS=['1','2','3','4','5','6','7','8','9','','0','⌫'];
 
 async function initLock(){
+  // Version reset: wipe stale hash from old page builds
+  if(!S.get('pin_v2')){S.rm('pin_hash');S.set('pin_v2','1');}
   if(!S.get('pin_hash'))S.set('pin_hash',await sha256('8181'));
   const kp=document.getElementById('keypad');
   KEYS.forEach(k=>{
