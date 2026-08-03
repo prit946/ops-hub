@@ -122,6 +122,7 @@ const SITES = [
   { name: 'Gemini Tool', url: 'https://prit946.github.io/ops-hub/gemini.html', check: 'gemini' },
   { name: 'Business Op', url: 'https://prit946.github.io/prit-business-op/', check: 'index' },
   { name: 'Brain OS', url: 'https://brain-os-phbz.onrender.com', check: 'brainOS', slowOk: true },
+  { name: 'DriveCore', url: 'https://prit946.github.io/ops-hub/drivecore.html', check: 'drivecore' },
 ];
 
 const WORKER_TESTS = [
@@ -138,6 +139,13 @@ const WORKER_TESTS = [
       body: JSON.stringify({ key: KEY, action: 'context.get', name: 'store8181' }) }).then(r=>r.json()),
     check: d => d.ok !== false && typeof d.context === 'string',
     detail: d => d.context ? `${d.context.length} chars` : 'empty',
+  },
+  {
+    name: 'DriveCore GAS — dc.ping via gas.proxy',
+    action: () => fetch(GW, { method:'POST', headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},
+      body: JSON.stringify({ key: KEY, action: 'gas.proxy', gasAction: 'dc.ping' }) }).then(r=>r.json()),
+    check: d => d.ok === true && d.service === 'DriveCore',
+    detail: d => d.ok ? 'GAS reachable ✓' : (d.error || JSON.stringify(d)),
   },
   {
     name: 'Worker health — no 5xx errors',

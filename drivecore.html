@@ -613,7 +613,8 @@ document.getElementById('btn-taxonomy').addEventListener('click',async()=>{
   log('Building taxonomy — rules first, then Gemini for ambiguous files…','info');
   log('This may take 2–5 min depending on Drive size and Gemini quota.','dim');
   try{
-    const d=await cf({action:'gas.proxy',gasAction:'dc.taxonomy'});
+    const cfg=S.get('settings')||{};
+    const d=await cf({action:'gas.proxy',gasAction:'dc.taxonomy',params:{gemKey:cfg.gemKey||''}});
     if(d.ok){
       log('✓ Taxonomy done: '+d.total+' files — '+d.moves+' to move, '+d.keeps+' already correct, '+d.reviews+' need review','ok');
       log('  '+d.geminiClassified+' files classified by Gemini','dim');
