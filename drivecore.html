@@ -5,386 +5,368 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>DriveCore</title>
 <style>
-:root {
-  --bg: #0a0d14;
-  --surface: #13171f;
-  --surface2: #1a1f2e;
-  --border: #1e2433;
-  --accent: #4f8ef7;
-  --accent-dim: rgba(79,142,247,0.1);
-  --green: #22c55e;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --text: #e2e8f0;
-  --muted: #64748b;
-  --mono: 'SF Mono','Fira Code','Cascadia Code',monospace;
-  --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+:root{
+  --bg:#0a0d14;--surface:#13171f;--surface2:#1a1f2e;
+  --border:#1e2433;--border2:#252d3d;
+  --accent:#4f8ef7;--accent-dim:rgba(79,142,247,0.12);
+  --green:#22c55e;--green-dim:rgba(34,197,94,0.12);
+  --amber:#f59e0b;--amber-dim:rgba(245,158,11,0.12);
+  --red:#ef4444;--red-dim:rgba(239,68,68,0.12);
+  --text:#e2e8f0;--text2:#94a3b8;--muted:#475569;
+  --mono:'SF Mono','Fira Code','Cascadia Code',monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --r:10px;--r-sm:7px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
-/* ── PIN LOCK ── */
-#lock-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:1000}
-.lock-wrap{width:100%;max-width:320px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:18px}
-.lock-logo{font-size:36px;line-height:1}
-.lock-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
-.lock-title span{color:var(--accent)}
-.lock-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:-8px}
+/* LOCK */
+#lock{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
+.lk-wrap{width:100%;max-width:320px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.lk-logo{font-size:38px}
+.lk-name{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.lk-name span{color:var(--accent)}
+.lk-sub{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:-12px}
 .pin-dots{display:flex;gap:14px;height:28px;align-items:center}
-.dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--muted);background:transparent;transition:background .1s,border-color .1s}
-.dot.filled{background:var(--accent);border-color:var(--accent)}
-.dot.error{background:var(--red);border-color:var(--red);animation:shake .3s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.dot{width:11px;height:11px;border-radius:50%;border:2px solid var(--border2);background:transparent;transition:all .1s}
+.dot.on{background:var(--accent);border-color:var(--accent)}
+.dot.err{background:var(--red);border-color:var(--red);animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%}
-.key{height:58px;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:22px;font-weight:500;cursor:pointer;transition:background .1s,transform .08s;display:flex;align-items:center;justify-content:center;user-select:none}
-.key:active{background:var(--border);transform:scale(.95)}
-.key.del{font-size:16px;color:var(--muted)}
-.key.empty{background:transparent;border:none;cursor:default}
-.lock-msg{font-size:12px;color:var(--muted);text-align:center;min-height:16px}
-.lock-msg.error{color:var(--red)}
+.key{height:58px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);color:var(--text);font-size:20px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background .1s,transform .08s}
+.key:active{background:var(--border2);transform:scale(0.95)}
+.key.del{font-size:15px;color:var(--text2)}
+.key.blank{background:transparent;border:none;pointer-events:none}
+.lk-msg{font-size:12px;color:var(--muted);min-height:16px;text-align:center}
+.lk-msg.err{color:var(--red)}
+.lk-msg.ok{color:var(--green)}
 
-/* ── APP ── */
-#app{max-width:600px;margin:0 auto;padding:14px 14px 80px}
-.app-header{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px}
-.app-title{font-size:18px;font-weight:800;letter-spacing:-0.3px}
-.app-title span{color:var(--accent)}
-.hbtns{display:flex;gap:8px}
-.ibtn{width:34px;height:34px;background:var(--surface);border:1px solid var(--border);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--muted);transition:color .15s,background .15s}
-.ibtn:hover{color:var(--text);background:var(--border)}
+/* APP */
+#app{max-width:600px;margin:0 auto;padding:16px 16px 100px;display:none}
 
-/* status bar */
-.sbar{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;gap:0;margin-bottom:14px;overflow:hidden}
-.sbar-stat{flex:1;display:flex;flex-direction:column;gap:2px;padding:0 10px;border-right:1px solid var(--border)}
-.sbar-stat:first-child{padding-left:0}
-.sbar-stat:last-child{border-right:none}
-.sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-.sv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
-.sv.ac{color:var(--accent)}
-.sv.gn{color:var(--green)}
-.sv.am{color:var(--amber)}
+/* Header */
+.hdr{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.hdr-l{display:flex;align-items:center;gap:10px}
+.hdr-title{font-size:17px;font-weight:800;letter-spacing:-0.3px}
+.hdr-title span{color:var(--accent)}
+.hdr-r{display:flex;gap:8px}
+.icon-btn{width:34px;height:34px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);transition:all .15s;text-decoration:none}
+.icon-btn:hover{color:var(--text);background:var(--border)}
 
-/* how-to */
-.howto{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
-.howto summary{padding:11px 14px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;transition:color .15s;user-select:none}
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.sc-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+.sc-val{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.c-blue{color:var(--accent)}.c-green{color:var(--green)}.c-amber{color:var(--amber)}.c-muted{color:var(--muted)}
+
+/* Section */
+.sec{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.sec-hdr{padding:11px 14px;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+
+/* How-to */
+.howto{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:12px;overflow:hidden}
+.howto summary{padding:11px 14px;cursor:pointer;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;list-style:none;display:flex;align-items:center;gap:6px;transition:color .15s}
 .howto summary::-webkit-details-marker{display:none}
 .howto[open] summary{color:var(--text);border-bottom:1px solid var(--border)}
-.ht-body{padding:14px;display:flex;flex-direction:column;gap:12px}
-.ht-sec h4{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;font-weight:700}
-.ht-sec p,.ht-sec li{font-size:12px;color:var(--muted);line-height:1.65}
-.ht-sec ul{padding-left:14px}
-.ht-sec li{margin-bottom:3px}
-.ht-sec code{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:4px;color:var(--text)}
-.ht-sec strong{color:var(--text)}
+.ht-body{padding:14px;display:flex;flex-direction:column;gap:14px}
+.ht-blk h4{font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px}
+.ht-blk p,.ht-blk li{font-size:12px;color:var(--text2);line-height:1.7}
+.ht-blk ul{padding-left:14px}
+.ht-blk li{margin-bottom:3px}
+code{font-family:var(--mono);font-size:11px;background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px;color:var(--text)}
 
-/* steps */
-.steps-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;overflow:hidden}
-.steps-hdr{padding:10px 14px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border)}
-.step{display:flex;align-items:flex-start;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border)}
+/* Steps */
+.step{display:flex;align-items:flex-start;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)}
 .step:last-child{border-bottom:none}
-.snum{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px}
-.snum.done{background:var(--green);color:#000}
-.snum.active{background:var(--accent);color:#fff}
-.snum.pend{background:var(--border);color:var(--muted)}
-.sinfo{flex:1}
-.stitle{font-size:13px;font-weight:600}
-.sdesc{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5}
-.sact{margin-top:7px}
+.badge{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px}
+.b-done{background:var(--green);color:#000}
+.b-active{background:var(--accent);color:#fff}
+.b-pend{background:var(--border2);color:var(--muted)}
+.step-body{flex:1}
+.step-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.step-desc{font-size:11px;color:var(--text2);line-height:1.5}
+.step-cta{margin-top:8px}
 
-/* buttons */
-.btn{height:42px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 16px}
+/* Buttons */
+.btn{height:42px;border-radius:var(--r);border:none;cursor:pointer;font-size:13px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:opacity .15s,transform .1s;padding:0 16px}
 .btn:active{transform:scale(.97)}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-sm{height:34px;font-size:12px;padding:0 12px;border-radius:8px}
-.btn-danger{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-p{background:var(--accent);color:#fff}
+.btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-d{background:var(--red-dim);color:var(--red);border:1px solid rgba(239,68,68,.25)}
+.btn-sm{height:32px;font-size:12px;padding:0 12px}
+.btn-fw{width:100%}
 
-/* log */
-.log-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-.log-hdr{padding:9px 14px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.log-clr{font-size:11px;cursor:pointer}
-.log-clr:hover{color:var(--text)}
-#log-out{font-family:var(--mono);font-size:11px;line-height:1.75;color:var(--muted);padding:10px 14px;max-height:220px;overflow-y:auto;white-space:pre-wrap}
+/* Log */
+#log{font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--text2);padding:12px 14px;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
 .ll{display:block}
-.ll.info{color:var(--text)}
-.ll.ok{color:var(--green)}
-.ll.warn{color:var(--amber)}
-.ll.err{color:var(--red)}
-.ll.dim{color:var(--muted)}
+.ll-ok{color:var(--green)}.ll-warn{color:var(--amber)}.ll-err{color:var(--red)}.ll-dim{color:var(--muted)}.ll-info{color:var(--text)}
 
-/* settings drawer */
-#settings-drawer{position:fixed;inset:0;z-index:900;display:none}
-#settings-drawer.open{display:block}
-.drw-overlay{position:absolute;inset:0;background:rgba(0,0,0,.6)}
-.drw-panel{position:absolute;top:0;right:0;bottom:0;width:min(360px,94vw);background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
-#settings-drawer.open .drw-panel{transform:translateX(0)}
-.drw-hdr{padding:14px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
-.drw-title{font-size:15px;font-weight:800}
-.drw-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px}
-.drw-close:hover{background:var(--border);color:var(--text)}
-.ss{padding:14px;border-bottom:1px solid var(--border)}
-.ss:last-child{border-bottom:none}
-.ss-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:11px;font-weight:700}
-.srow{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-.srow:last-child{border-bottom:none}
-.srow-col{flex-direction:column;align-items:flex-start;gap:6px}
-.sname{font-size:13px;font-weight:500}
-.shint{font-size:11px;color:var(--muted);margin-top:1px;line-height:1.5}
-.field{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;padding:8px 10px;font-family:var(--sans);outline:none}
+/* Settings drawer */
+#settings{position:fixed;inset:0;z-index:800;display:none}
+#settings.open{display:block}
+.s-ov{position:absolute;inset:0;background:rgba(0,0,0,.65)}
+.s-panel{position:absolute;top:0;right:0;bottom:0;width:min(360px,95vw);background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+#settings.open .s-panel{transform:translateX(0)}
+.s-hdr{padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
+.s-title{font-size:15px;font-weight:800}
+.s-x{width:30px;height:30px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.s-x:hover{background:var(--border);color:var(--text)}
+.s-sec{padding:16px;border-bottom:1px solid var(--border)}
+.s-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:12px}
+.s-row{padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.s-row:last-child{border-bottom:none}
+.s-row.col{flex-direction:column;align-items:flex-start}
+.s-name{font-size:13px;font-weight:500}
+.s-hint{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.4}
+.field{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:13px;padding:8px 10px;margin-top:6px;font-family:var(--sans);outline:none;transition:border-color .15s}
 .field:focus{border-color:var(--accent)}
 .field.mono{font-family:var(--mono);font-size:11px}
-.field-row{display:flex;gap:6px;margin-top:4px}
-/* toggle */
-.tog{position:relative;width:38px;height:21px;flex-shrink:0}
-.tog input{opacity:0;width:0;height:0}
-.tog-track{position:absolute;inset:0;background:var(--border);border-radius:11px;cursor:pointer;transition:background .2s}
+select.field{cursor:pointer}
+.slide-wrap{display:flex;align-items:center;gap:10px;margin-top:8px}
+.slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border2);outline:none}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer}
+.sval{font-size:12px;color:var(--accent);font-weight:700;min-width:32px;text-align:right}
+
+/* Toggle */
+.tog{position:relative;width:40px;height:22px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0;position:absolute}
+.tog-track{position:absolute;inset:0;background:var(--border2);border-radius:11px;cursor:pointer;transition:background .2s}
 .tog input:checked+.tog-track{background:var(--accent)}
-.tog-thumb{position:absolute;width:15px;height:15px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;pointer-events:none}
-.tog input:checked~.tog-thumb{left:20px}
-/* range */
-.rng-wrap{display:flex;align-items:center;gap:10px;margin-top:6px}
-.rng{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none}
-.rng::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer}
-.rng-val{font-size:12px;color:var(--accent);min-width:32px;text-align:right;font-weight:700}
-/* pin inputs */
-.pin-inp{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:20px;font-family:var(--mono);padding:10px;letter-spacing:8px;text-align:center;outline:none}
-.pin-inp:focus{border-color:var(--accent)}
-.pin-form{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-/* status dot */
-.sdot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px}
-.dot2{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
-.dot2.gn{background:var(--green)}
-.dot2.rd{background:var(--red)}
+.tog-thumb{position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;pointer-events:none;transition:left .2s}
+.tog input:checked~.tog-thumb{left:21px}
+
+/* Status dot */
+.sdot{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);margin-top:6px}
+.sdot-c{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.sdot-c.green{background:var(--green)}
+.sdot-c.red{background:var(--red)}
+.sdot-c.amber{background:var(--amber)}
+
+/* PIN inputs in settings */
+.pin-in{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text);font-size:20px;font-family:var(--mono);padding:10px;letter-spacing:10px;text-align:center;outline:none;transition:border-color .15s;margin-top:6px}
+.pin-in:focus{border-color:var(--accent)}
+
+/* Toast */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:10px 18px;font-size:13px;color:var(--text);z-index:2000;transition:transform .3s;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Danger */
+.danger{padding:16px}
+.danger-lbl{font-size:10px;color:var(--red);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:12px}
 </style>
 </head>
 <body>
 
-<!-- PIN LOCK -->
-<div id="lock-screen">
-  <div class="lock-wrap">
-    <div class="lock-logo">⚙️</div>
-    <div class="lock-title">Drive<span>Core</span></div>
-    <div class="lock-sub" id="lock-sub">Enter PIN</div>
+<!-- LOCK SCREEN -->
+<div id="lock">
+  <div class="lk-wrap">
+    <div class="lk-logo">⚙️</div>
+    <div class="lk-name">Drive<span>Core</span></div>
+    <div class="lk-sub" id="lk-sub">Enter PIN</div>
     <div class="pin-dots">
       <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
       <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
     </div>
     <div class="keypad" id="keypad"></div>
-    <div class="lock-msg" id="lock-msg"></div>
+    <div class="lk-msg" id="lk-msg"></div>
   </div>
 </div>
 
 <!-- MAIN APP -->
-<div id="app" style="display:none">
-  <div class="app-header">
-    <div class="app-title">Drive<span>Core</span></div>
-    <div class="hbtns">
-      <button class="ibtn" id="lock-btn" title="Lock">🔒</button>
-      <button class="ibtn" id="settings-btn" title="Settings">⚙️</button>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-l">
+      <span style="font-size:18px">⚙️</span>
+      <div class="hdr-title">Drive<span>Core</span></div>
+    </div>
+    <div class="hdr-r">
+      <a href="index.html" class="icon-btn" title="Home">🏠</a>
+      <button class="icon-btn" id="btn-lock" title="Lock">🔒</button>
+      <button class="icon-btn" id="btn-settings" title="Settings">⚙</button>
     </div>
   </div>
 
-  <div class="sbar">
-    <div class="sbar-stat">
-      <div class="sl">Last Run</div>
-      <div class="sv" id="sv-run">Never</div>
-    </div>
-    <div class="sbar-stat">
-      <div class="sl">Files</div>
-      <div class="sv ac" id="sv-files">—</div>
-    </div>
-    <div class="sbar-stat">
-      <div class="sl">Errors</div>
-      <div class="sv am" id="sv-err">—</div>
-    </div>
-    <div class="sbar-stat">
-      <div class="sl">Dupes</div>
-      <div class="sv" id="sv-dupes">—</div>
-    </div>
+  <!-- Status cards -->
+  <div class="stats">
+    <div class="sc"><div class="sc-lbl">Last Run</div><div class="sc-val c-muted" id="s-lr">Never</div></div>
+    <div class="sc"><div class="sc-lbl">Files</div><div class="sc-val c-blue" id="s-files">—</div></div>
+    <div class="sc"><div class="sc-lbl">Pending</div><div class="sc-val c-amber" id="s-pend">—</div></div>
+    <div class="sc"><div class="sc-lbl">Dupes</div><div class="sc-val c-muted" id="s-dupes">—</div></div>
   </div>
 
+  <!-- How-to -->
   <details class="howto">
     <summary>📋 Plan of Action &amp; How to Use</summary>
     <div class="ht-body">
-      <div class="ht-sec">
-        <h4>What DriveCore Does</h4>
-        <p>Auto-organizes your entire Google Drive across personal, Pravin's finances, and Store 8181. Moves files to the right folder, renames them consistently, deduplicates, and archives stale files. <strong>Nothing is ever permanently deleted</strong> — everything goes to Archive.</p>
+      <div class="ht-blk">
+        <h4>What DriveCore does</h4>
+        <p>Auto-organizes your entire Google Drive — moves files to the right folder, renames consistently, deduplicates, and archives stale files. Covers: Prit personal, Pravin finances (IL home + 2 rentals + DQ sold 2023), Store 8181 business. <strong>Nothing is ever permanently deleted</strong> — everything moves to Archive.</p>
       </div>
-      <div class="ht-sec">
-        <h4>6-Step Build Process</h4>
+      <div class="ht-blk">
+        <h4>New session setup</h4>
         <ul>
-          <li><strong>Step 1 — Spec:</strong> Done. Architecture and scope approved.</li>
-          <li><strong>Step 2 — Manifest:</strong> Tap "Scan Drive" → reads all files, no changes made. Manifest saved to <code>DriveCore/</code> folder in Drive. Review it before continuing.</li>
-          <li><strong>Step 3 — Taxonomy:</strong> Gemini Flash reads manifest → proposes folder structure as JSON. You approve before anything moves.</li>
-          <li><strong>Step 4 — Dry Run:</strong> Simulates all moves/renames, outputs log. No actual changes.</li>
-          <li><strong>Step 5 — Execute:</strong> Applies changes in batches of 100. Every action logged in Drive.</li>
-          <li><strong>Step 6 — Ongoing:</strong> Weekly auto-run. Watches SORT ME folder via webhook for instant trigger.</li>
+          <li>In Claude Code terminal: <code>ctx-get drivecore</code> → loads full context</li>
+          <li>Open ⚙ Settings → paste GAS Web App URL once → saved to CF Worker KV permanently</li>
+          <li>Settings → Gemini key → get free key at <code>aistudio.google.com/app/apikey</code></li>
+          <li>Default PIN: <code>8181</code> — change it in Settings → Security</li>
+          <li>SORT ME folder = drop zone. Webhook triggers DriveCore instantly on file drop.</li>
         </ul>
       </div>
-      <div class="ht-sec">
-        <h4>New Session Setup</h4>
+      <div class="ht-blk">
+        <h4>6-step build process</h4>
         <ul>
-          <li>Open Claude Code → type <code>ctx-get drivecore</code> to load full project context</li>
-          <li>GAS URL: paste once in Settings → saved permanently in gateway KV</li>
-          <li>Gemini key: get free key at <code>aistudio.google.com/app/apikey</code> → paste in Settings</li>
-          <li>Drop zone for new files: <code>SORT ME</code> folder in Store 8181. DriveCore watches it.</li>
+          <li><strong>Step 1 — Spec</strong>: Done ✓</li>
+          <li><strong>Step 2 — Manifest</strong>: Scan Drive → review JSON in Drive → no writes made</li>
+          <li><strong>Step 3 — Taxonomy</strong>: Gemini classifies files → proposed folder map → you approve</li>
+          <li><strong>Step 4 — Dry Run</strong>: Simulates all moves/renames → review log → no actual changes</li>
+          <li><strong>Step 5 — Execute</strong>: Applies approved changes in batches of 100, every action logged</li>
+          <li><strong>Step 6 — Ongoing</strong>: Weekly trigger + webhook on SORT ME. Summary after each run.</li>
         </ul>
       </div>
-      <div class="ht-sec">
-        <h4>Folder Rules (Learned, Not Hardcoded)</h4>
+      <div class="ht-blk">
+        <h4>How DriveCore routes files (learned not hardcoded)</h4>
         <ul>
-          <li><strong>01_Business</strong> → Store 8181 + Dairy Queen</li>
-          <li><strong>03_Personal</strong> → Prit's docs, vehicles, health, finance</li>
-          <li><strong>04_Family &amp; Admin → Pravin</strong> → IL primary home, 2 rentals, DQ sold 2023</li>
-          <li>Gemini reads file content + name to classify. Taxonomy JSON is the rulebook — editable.</li>
+          <li><strong>01_Business</strong> → Store 8181, Dairy Queen</li>
+          <li><strong>03_Personal</strong> → Prit docs, vehicles, health, finance</li>
+          <li><strong>04_Family → Pravin</strong> → IL home, 2 rentals, DQ archive (sold 2023)</li>
+          <li>Gemini reads filename + content to classify. Taxonomy is a portable JSON config — NAS version uses Ollama instead (same file).</li>
         </ul>
       </div>
-      <div class="ht-sec">
-        <h4>Security</h4>
-        <p>Default first-time PIN: <code>8181</code>. Change it in Settings → Security. PIN is hashed (SHA-256) and stored locally — never sent anywhere.</p>
+      <div class="ht-blk">
+        <h4>Architecture</h4>
+        <p>DriveCore page → CF Worker <code>gas.proxy</code> → GAS script → Google Drive. No CORS issues. CF Worker stores GAS URL in KV — paste once in Settings, works from any device forever.</p>
       </div>
     </div>
   </details>
 
-  <div class="steps-card">
-    <div class="steps-hdr">Build Progress</div>
+  <!-- Build steps -->
+  <div class="sec">
+    <div class="sec-hdr">Build Progress</div>
     <div class="step">
-      <div class="snum done">✓</div>
-      <div class="sinfo">
-        <div class="stitle">Spec &amp; Scope</div>
-        <div class="sdesc">Architecture approved. Taxonomy approach confirmed. Archive-only policy set.</div>
+      <div class="badge b-done">✓</div>
+      <div class="step-body">
+        <div class="step-name">Spec &amp; Scope</div>
+        <div class="step-desc">Architecture approved. Gemini 1.5 Flash (free tier) for classification. Portable JSON taxonomy for NAS migration.</div>
       </div>
     </div>
     <div class="step">
-      <div class="snum active">2</div>
-      <div class="sinfo">
-        <div class="stitle">Read-Only Manifest</div>
-        <div class="sdesc">Scans entire Drive, outputs file map to DriveCore folder. No writes to any existing file.</div>
-        <div class="sact">
-          <button class="btn btn-primary btn-sm" id="btn-manifest">▶ Scan Drive Now</button>
+      <div class="badge b-active">2</div>
+      <div class="step-body">
+        <div class="step-name">Read-Only Manifest Scan</div>
+        <div class="step-desc">Walks all of Drive, builds file map JSON — saved to Drive/DriveCore/. Zero writes to folder structure. Review before continuing.</div>
+        <div class="step-cta">
+          <button class="btn btn-p btn-sm" id="btn-manifest">▶ Scan Drive Now</button>
         </div>
       </div>
     </div>
     <div class="step">
-      <div class="snum pend">3</div>
-      <div class="sinfo">
-        <div class="stitle">Taxonomy Engine</div>
-        <div class="sdesc">Gemini Flash classifies files → proposed folder structure. Requires your approval before any moves.</div>
+      <div class="badge b-pend">3</div>
+      <div class="step-body">
+        <div class="step-name">Taxonomy Engine</div>
+        <div class="step-desc">Gemini classifies files → proposed folder structure JSON. You approve before any file moves.</div>
       </div>
     </div>
     <div class="step">
-      <div class="snum pend">4</div>
-      <div class="sinfo">
-        <div class="stitle">Dry Run</div>
-        <div class="sdesc">Simulates all moves and renames. Outputs a log file for review. Zero actual changes.</div>
+      <div class="badge b-pend">4</div>
+      <div class="step-body">
+        <div class="step-name">Dry Run</div>
+        <div class="step-desc">Simulates all moves, renames, archives. Outputs log. Zero actual changes made.</div>
       </div>
     </div>
     <div class="step">
-      <div class="snum pend">5</div>
-      <div class="sinfo">
-        <div class="stitle">Execute</div>
-        <div class="sdesc">Applies approved changes in batches of 100. Full action log saved to Drive.</div>
+      <div class="badge b-pend">5</div>
+      <div class="step-body">
+        <div class="step-name">Execute</div>
+        <div class="step-desc">Applies approved changes in batches of 100. Every action logged in Drive. Reversible via Archive.</div>
       </div>
     </div>
     <div class="step">
-      <div class="snum pend">6</div>
-      <div class="sinfo">
-        <div class="stitle">Ongoing Mode</div>
-        <div class="sdesc">Weekly GAS trigger. SORT ME folder webhook for instant trigger. Summary report after each run.</div>
+      <div class="badge b-pend">6</div>
+      <div class="step-body">
+        <div class="step-name">Ongoing Mode</div>
+        <div class="step-desc">Weekly GAS trigger + webhook on SORT ME. Only processes files changed since last run. Summary report each time.</div>
       </div>
     </div>
   </div>
 
-  <div class="log-card">
-    <div class="log-hdr">
+  <!-- Log -->
+  <div class="sec">
+    <div class="sec-hdr">
       <span>Execution Log</span>
-      <span class="log-clr" id="log-clr">clear</span>
+      <button class="btn btn-s btn-sm" id="btn-clr">Clear</button>
     </div>
-    <div id="log-out"><span class="ll dim">No runs yet. Configure GAS URL in Settings, then tap Scan Drive Now.</span></div>
+    <div id="log"><span class="ll ll-dim">No runs yet. Tap "Scan Drive Now" in Step 2 above.</span></div>
   </div>
 </div>
 
 <!-- SETTINGS DRAWER -->
-<div id="settings-drawer">
-  <div class="drw-overlay" id="drw-overlay"></div>
-  <div class="drw-panel">
-    <div class="drw-hdr">
-      <div class="drw-title">Settings</div>
-      <button class="drw-close" id="drw-close">✕</button>
+<div id="settings">
+  <div class="s-ov" id="s-ov"></div>
+  <div class="s-panel">
+    <div class="s-hdr">
+      <div class="s-title">Settings</div>
+      <button class="s-x" id="s-x">✕</button>
     </div>
 
-    <div class="ss">
-      <div class="ss-lbl">Gateway Connection</div>
-      <div class="srow srow-col">
-        <div>
-          <div class="sname">GAS Web App URL</div>
-          <div class="shint">Paste your Google Apps Script web app deploy URL once. Saved permanently in gateway KV — never need to enter again.</div>
-        </div>
-        <div style="width:100%">
-          <div class="field-row">
-            <input type="url" class="field mono" id="gas-url" placeholder="https://script.google.com/macros/s/…">
-            <button class="btn btn-secondary btn-sm" id="btn-save-gas">Save</button>
-          </div>
-          <div class="sdot"><div class="dot2" id="gas-dot"></div><span id="gas-txt">Not configured</span></div>
-        </div>
-        <button class="btn btn-secondary btn-sm" id="btn-test-gas" style="margin-top:2px">Test Connection</button>
+    <!-- GAS Connection -->
+    <div class="s-sec">
+      <div class="s-lbl">GAS Connection</div>
+      <div class="s-row col">
+        <div class="s-name">GAS Web App URL</div>
+        <div class="s-hint">Deploy Apps Script as web app → paste URL here once. Saved to CF Worker KV — works from any device, any browser.</div>
+        <input type="url" class="field mono" id="gas-url" placeholder="https://script.google.com/macros/s/…" autocomplete="off" spellcheck="false">
+        <div class="sdot"><div class="sdot-c" id="gas-dot"></div><span id="gas-txt">Checking…</span></div>
+        <button class="btn btn-s btn-sm" id="btn-gas" style="margin-top:8px">Save URL to CF Worker</button>
       </div>
     </div>
 
-    <div class="ss">
-      <div class="ss-lbl">Gemini API (Free Tier)</div>
-      <div class="srow srow-col">
-        <div>
-          <div class="sname">AI Studio API Key</div>
-          <div class="shint">Free key · Gemini 1.5 Flash · 15 RPM · 1M tokens/day<br>Get at: <strong>aistudio.google.com/app/apikey</strong></div>
-        </div>
-        <div class="field-row" style="width:100%">
-          <input type="password" class="field mono" id="gem-key" placeholder="AIza…">
-          <button class="btn btn-secondary btn-sm" id="btn-save-gem">Save</button>
-        </div>
-        <div class="sdot"><div class="dot2" id="gem-dot"></div><span id="gem-txt">Not configured</span></div>
+    <!-- Gemini -->
+    <div class="s-sec">
+      <div class="s-lbl">Gemini API (Free Tier)</div>
+      <div class="s-row col">
+        <div class="s-name">AI Studio API Key</div>
+        <div class="s-hint">Free key at aistudio.google.com/app/apikey · Gemini 1.5 Flash · 15 RPM / 1M tokens/day</div>
+        <input type="password" class="field mono" id="gem-key" placeholder="AIza…" autocomplete="off">
+        <div class="sdot"><div class="sdot-c" id="gem-dot"></div><span id="gem-txt">Not configured</span></div>
+        <button class="btn btn-s btn-sm" id="btn-gem" style="margin-top:8px">Save Key</button>
       </div>
     </div>
 
-    <div class="ss">
-      <div class="ss-lbl">Behavior</div>
-      <div class="srow">
-        <div>
-          <div class="sname">Archive threshold</div>
-          <div class="shint">Files untouched this long get archived (never deleted)</div>
-          <div class="rng-wrap">
-            <input type="range" class="rng" id="rng-archive" min="2" max="24" value="6">
-            <div class="rng-val"><span id="rng-val">6</span>mo</div>
-          </div>
+    <!-- Behavior -->
+    <div class="s-sec">
+      <div class="s-lbl">Behavior</div>
+      <div class="s-row col">
+        <div class="s-name">Archive threshold</div>
+        <div class="s-hint">Files not accessed in this many months are archived (never deleted)</div>
+        <div class="slide-wrap">
+          <input type="range" class="slider" id="sl-arch" min="2" max="24" value="6">
+          <div class="sval"><span id="sl-val">6</span>mo</div>
         </div>
       </div>
-      <div class="srow" style="gap:10px">
-        <div>
-          <div class="sname">Naming format</div>
-        </div>
-        <select class="field" id="sel-naming" style="width:auto;margin:0;padding:6px 8px">
-          <option value="date-title-cat">YYYY-MM-DD — Title — Category</option>
+      <div class="s-row">
+        <div class="s-name">Naming format</div>
+        <select class="field" id="sel-name" style="width:auto;margin:0;padding:6px 8px">
+          <option value="date-title">YYYY-MM-DD — Title</option>
           <option value="title-date">Title — YYYY-MM-DD</option>
-          <option value="original">Keep original names</option>
+          <option value="original">Keep originals</option>
         </select>
       </div>
-      <div class="srow">
+      <div class="s-row">
         <div>
-          <div class="sname">SORT ME webhook</div>
-          <div class="shint">Instant trigger when file dropped in SORT ME folder</div>
+          <div class="s-name">Drive Webhook</div>
+          <div class="s-hint">Instant trigger on SORT ME file drop</div>
         </div>
-        <label class="tog">
-          <input type="checkbox" id="tog-webhook">
-          <div class="tog-track"></div>
-          <div class="tog-thumb"></div>
-        </label>
+        <label class="tog"><input type="checkbox" id="tog-wh"><div class="tog-track"></div><div class="tog-thumb"></div></label>
       </div>
-      <div class="srow" style="gap:10px">
-        <div><div class="sname">Auto-lock</div></div>
-        <select class="field" id="sel-autolock" style="width:auto;margin:0;padding:6px 8px">
+      <div class="s-row">
+        <div class="s-name">Auto-lock</div>
+        <select class="field" id="sel-lock" style="width:auto;margin:0;padding:6px 8px">
           <option value="15">15 min</option>
           <option value="30" selected>30 min</option>
           <option value="60">1 hour</option>
@@ -393,309 +375,279 @@ body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:1
       </div>
     </div>
 
-    <div class="ss">
-      <div class="ss-lbl">Security</div>
-      <div class="srow srow-col">
-        <div class="sname">Change PIN</div>
-        <div class="pin-form" style="width:100%">
-          <input type="password" class="pin-inp" id="pin-cur" maxlength="6" placeholder="Current PIN" inputmode="numeric">
-          <input type="password" class="pin-inp" id="pin-new" maxlength="6" placeholder="New PIN (4–6 digits)" inputmode="numeric">
-          <input type="password" class="pin-inp" id="pin-cnf" maxlength="6" placeholder="Confirm new PIN" inputmode="numeric">
-          <button class="btn btn-secondary" id="btn-chgpin" style="width:100%">Update PIN</button>
-          <div class="lock-msg" id="pin-msg"></div>
-        </div>
+    <!-- Security -->
+    <div class="s-sec">
+      <div class="s-lbl">Security — Change PIN</div>
+      <div class="s-row col">
+        <div class="s-hint">Default is 8181. Change to anything 4–6 digits.</div>
+        <input type="password" class="pin-in" id="pin-cur" maxlength="6" placeholder="Current PIN" inputmode="numeric">
+        <input type="password" class="pin-in" id="pin-new" maxlength="6" placeholder="New PIN" inputmode="numeric">
+        <input type="password" class="pin-in" id="pin-cf" maxlength="6" placeholder="Confirm new" inputmode="numeric">
+        <button class="btn btn-s btn-fw" id="btn-pin" style="margin-top:10px">Update PIN</button>
+        <div class="lk-msg" id="pin-msg" style="margin-top:6px"></div>
       </div>
     </div>
 
-    <div class="ss">
-      <div class="ss-lbl" style="color:var(--red)">Danger Zone</div>
-      <button class="btn btn-danger" id="btn-reset" style="width:100%">Reset All DriveCore Local Data</button>
+    <!-- Danger -->
+    <div class="danger">
+      <div class="danger-lbl">Danger Zone</div>
+      <button class="btn btn-d btn-fw" id="btn-reset">Reset All Local DriveCore Data</button>
     </div>
   </div>
 </div>
 
-<script>
-const GW = 'https://spring-sea-ac0a.prit946.workers.dev';
-const KEY = 'Store8181Prit2026';
+<div id="toast"></div>
 
-// ── storage ──────────────────────────────────────────────────────────────────
-const S = {
-  get: k => { try { return JSON.parse(localStorage.getItem('dc_'+k)); } catch { return null; } },
-  set: (k,v) => localStorage.setItem('dc_'+k, JSON.stringify(v)),
-  rm: k => localStorage.removeItem('dc_'+k)
+<script>
+const CF='https://spring-sea-ac0a.prit946.workers.dev';
+const KEY='Store8181Prit2026';
+
+const S={
+  get:k=>{try{return JSON.parse(localStorage.getItem('dc_'+k))}catch{return null}},
+  set:(k,v)=>localStorage.setItem('dc_'+k,JSON.stringify(v)),
+  rm:k=>localStorage.removeItem('dc_'+k)
 };
 
-// ── SHA-256 ──────────────────────────────────────────────────────────────────
-async function sha256(s) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+async function sha256(s){
+  const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));
+  return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
 }
 
-// ── CF Worker call ────────────────────────────────────────────────────────────
-async function gw(body) {
-  const r = await fetch(GW, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({...body, key: KEY})
-  });
-  return r.json();
-}
+// ── LOCK ──────────────────────────────────────────
+let pinBuf='';
+const KEYS=['1','2','3','4','5','6','7','8','9','','0','⌫'];
 
-// ── PIN LOCK ──────────────────────────────────────────────────────────────────
-let pinBuf = '';
-const KEYS = ['1','2','3','4','5','6','7','8','9','','0','⌫'];
-const DEFAULT_PIN = '8181';
-
-function buildKeypad() {
-  const kp = document.getElementById('keypad');
-  KEYS.forEach(k => {
-    const b = document.createElement('button');
-    b.className = 'key' + (k===''?' empty':'') + (k==='⌫'?' del':'');
-    b.textContent = k;
-    if (k) b.addEventListener('click', () => keyPress(k));
+async function initLock(){
+  if(!S.get('pin_hash'))S.set('pin_hash',await sha256('8181'));
+  const kp=document.getElementById('keypad');
+  KEYS.forEach(k=>{
+    const b=document.createElement('button');
+    b.className='key'+(k===''?' blank':k==='⌫'?' del':'');
+    b.textContent=k;
+    if(k)b.addEventListener('click',()=>kpPress(k));
     kp.appendChild(b);
   });
 }
 
-function updateDots(n, err) {
-  for (let i=0; i<4; i++) {
-    const d = document.getElementById('d'+i);
-    d.className = 'dot' + (err?' error': i<n?' filled':'');
+function dots(n,mode){
+  for(let i=0;i<4;i++){
+    const d=document.getElementById('d'+i);
+    d.className='dot'+(mode==='err'&&i<n?' err':mode!=='err'&&i<n?' on':'');
   }
 }
 
-async function keyPress(k) {
-  if (k==='⌫') { pinBuf=pinBuf.slice(0,-1); updateDots(pinBuf.length,false); return; }
-  pinBuf += k;
-  updateDots(pinBuf.length, false);
-  if (pinBuf.length >= 4) { await tryUnlock(pinBuf); pinBuf=''; }
+async function kpPress(k){
+  if(k==='⌫'){pinBuf=pinBuf.slice(0,-1);dots(pinBuf.length);return;}
+  pinBuf+=k;dots(pinBuf.length);
+  if(pinBuf.length>=4){await checkPin(pinBuf);pinBuf='';}
 }
 
-async function tryUnlock(pin) {
-  const stored = S.get('pin_hash');
-  const entered = await sha256(pin);
-  if (entered === stored) { unlock(); return; }
-  updateDots(4, true);
-  showLockMsg('Incorrect PIN', true);
-  setTimeout(() => { updateDots(0, false); showLockMsg(''); }, 1000);
-}
-
-function showLockMsg(msg, err) {
-  const el = document.getElementById('lock-msg');
-  el.textContent = msg;
-  el.className = 'lock-msg' + (err?' error':'');
-}
-
-async function initPin() {
-  buildKeypad();
-  if (!S.get('pin_hash')) {
-    S.set('pin_hash', await sha256(DEFAULT_PIN));
-    document.getElementById('lock-sub').textContent = 'Default PIN: 8181';
+async function checkPin(p){
+  if(await sha256(p)===S.get('pin_hash')){unlock();}
+  else{
+    dots(4,'err');
+    msg('lk-msg','Incorrect PIN','err');
+    setTimeout(()=>{dots(0);msg('lk-msg','');},1200);
   }
 }
 
-let lockTimer = null;
-function resetLockTimer() {
+let lockTimer=null;
+function resetLockTimer(){
   clearTimeout(lockTimer);
-  const mins = parseInt((S.get('settings')||{}).autolockTime ?? 30);
-  if (mins > 0) lockTimer = setTimeout(lock, mins*60*1000);
+  const m=parseInt(S.get('settings')?.autolock??30);
+  if(m>0)lockTimer=setTimeout(lock,m*60*1000);
 }
 
-function unlock() {
-  document.getElementById('lock-screen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  pinBuf = '';
-  updateDots(0, false);
-  loadStats();
-  checkGasStatus();
+function unlock(){
+  document.getElementById('lock').style.display='none';
+  document.getElementById('app').style.display='block';
+  pinBuf='';dots(0);
+  loadStats();loadSettingsUI();checkGas();
   resetLockTimer();
-  ['click','keydown','touchstart'].forEach(e => document.addEventListener(e, resetLockTimer, {passive:true, once:false}));
+  ['click','keydown','touchstart'].forEach(e=>document.addEventListener(e,resetLockTimer,{passive:true}));
 }
 
-function lock() {
-  closeSettings();
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('lock-screen').style.display = 'flex';
+function lock(){
+  document.getElementById('lock').style.display='flex';
+  document.getElementById('app').style.display='none';
+  sClose();
 }
 
-document.getElementById('lock-btn').addEventListener('click', lock);
+document.getElementById('btn-lock').addEventListener('click',lock);
 
-// ── SETTINGS ──────────────────────────────────────────────────────────────────
-function openSettings() {
-  document.getElementById('settings-drawer').classList.add('open');
-  populateSettings();
-}
-function closeSettings() {
-  document.getElementById('settings-drawer').classList.remove('open');
-}
-document.getElementById('settings-btn').addEventListener('click', openSettings);
-document.getElementById('drw-close').addEventListener('click', closeSettings);
-document.getElementById('drw-overlay').addEventListener('click', closeSettings);
-
-function populateSettings() {
-  const cfg = S.get('settings') || {};
-  const rng = document.getElementById('rng-archive');
-  rng.value = cfg.archiveMonths || 6;
-  document.getElementById('rng-val').textContent = rng.value;
-  document.getElementById('sel-naming').value = cfg.namingFormat || 'date-title-cat';
-  document.getElementById('tog-webhook').checked = cfg.webhook || false;
-  document.getElementById('sel-autolock').value = cfg.autolockTime || 30;
-  if (cfg.gemSaved) { document.getElementById('gem-dot').className='dot2 gn'; document.getElementById('gem-txt').textContent='Key saved'; }
+// ── TOAST ────────────────────────────────────────
+function toast(t,dur=3000){
+  const el=document.getElementById('toast');
+  el.textContent=t;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),dur);
 }
 
-function saveLocalSettings() {
-  const cfg = S.get('settings') || {};
-  cfg.archiveMonths = parseInt(document.getElementById('rng-archive').value);
-  cfg.namingFormat = document.getElementById('sel-naming').value;
-  cfg.webhook = document.getElementById('tog-webhook').checked;
-  cfg.autolockTime = parseInt(document.getElementById('sel-autolock').value);
-  S.set('settings', cfg);
+// ── MSG helper ───────────────────────────────────
+function msg(id,text,type){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=text;
+  el.className='lk-msg'+(type?' '+type:'');
 }
 
-document.getElementById('rng-archive').addEventListener('input', e => {
-  document.getElementById('rng-val').textContent = e.target.value;
-  saveLocalSettings();
-});
-['sel-naming','tog-webhook','sel-autolock'].forEach(id => {
-  document.getElementById(id).addEventListener('change', saveLocalSettings);
-});
+function sdot(dotId,txtId,state,text){
+  const d=document.getElementById(dotId);
+  const t=document.getElementById(txtId);
+  if(d)d.className='sdot-c'+(state?' '+state:'');
+  if(t)t.textContent=text;
+}
 
-// GAS URL save
-document.getElementById('btn-save-gas').addEventListener('click', async () => {
-  const url = document.getElementById('gas-url').value.trim();
-  if (!url) return;
-  setDot('gas', null, 'Saving…');
-  try {
-    const r = await gw({action:'gas.setUrl', url});
-    if (r.ok) setDot('gas', 'gn', 'Saved to gateway KV ✓');
-    else setDot('gas', 'rd', 'Save failed: ' + (r.error||''));
-  } catch(e) { setDot('gas', 'rd', 'Error: ' + e.message); }
+// ── CF Worker ────────────────────────────────────
+async function cf(body){
+  const r=await fetch(CF,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},
+    body:JSON.stringify({key:KEY,...body})
+  });
+  return r.json();
+}
+
+// ── LOG ──────────────────────────────────────────
+function log(text,type){
+  const el=document.getElementById('log');
+  if(el.querySelector('.ll-dim'))el.innerHTML='';
+  const ln=document.createElement('span');
+  ln.className='ll ll-'+(type||'info');
+  ln.textContent='['+new Date().toLocaleTimeString()+'] '+text+'\n';
+  el.appendChild(ln);
+  el.scrollTop=el.scrollHeight;
+}
+document.getElementById('btn-clr').addEventListener('click',()=>{
+  document.getElementById('log').innerHTML='<span class="ll ll-dim">Log cleared.\n</span>';
 });
 
-// Test GAS
-document.getElementById('btn-test-gas').addEventListener('click', async () => {
-  setDot('gas', null, 'Testing…');
-  log('Testing GAS connection via gateway proxy…', 'info');
-  try {
-    const r = await gw({action:'gas.proxy', gasAction:'dc.ping'});
-    if (r.ok) { setDot('gas', 'gn', 'Connected ✓'); log('GAS connection: OK ✓', 'ok'); }
-    else { setDot('gas', 'rd', 'Test failed'); log('GAS test failed: ' + JSON.stringify(r), 'err'); }
-  } catch(e) { setDot('gas', 'rd', 'Error'); log('Error: ' + e.message, 'err'); }
-});
-
-// Gemini key save
-document.getElementById('btn-save-gem').addEventListener('click', async () => {
-  const key = document.getElementById('gem-key').value.trim();
-  if (!key) return;
-  // Store in CF Worker KV (context store, special key)
-  try {
-    await gw({action:'context.setFile', name:'drivecore', filename:'gemini_key', content: key});
-    const cfg = S.get('settings') || {};
-    cfg.gemSaved = true;
-    S.set('settings', cfg);
-    setDot('gem', 'gn', 'Key saved to gateway KV ✓');
-  } catch(e) { setDot('gem', 'rd', 'Error: ' + e.message); }
-});
-
-function setDot(which, cls, txt) {
-  document.getElementById(which+'-dot').className = 'dot2' + (cls?' '+cls:'');
-  document.getElementById(which+'-txt').textContent = txt;
+// ── STATS ────────────────────────────────────────
+function loadStats(){
+  const st=S.get('stats')||{};
+  document.getElementById('s-files').textContent=st.files?.toLocaleString()||'—';
+  document.getElementById('s-pend').textContent=st.pending??'—';
+  document.getElementById('s-dupes').textContent=st.dupes??'—';
+  document.getElementById('s-lr').textContent=st.lastRun?new Date(st.lastRun).toLocaleDateString():'Never';
 }
 
-async function checkGasStatus() {
-  try {
-    const r = await gw({action:'gas.getUrl'});
-    if (r.configured) {
-      setDot('gas', 'gn', 'URL configured: ' + r.preview);
-      document.getElementById('gas-url').placeholder = r.preview;
-    }
-  } catch {}
+// ── GAS URL CHECK ─────────────────────────────────
+async function checkGas(){
+  try{
+    const d=await cf({action:'gas.getUrl'});
+    d.configured
+      ?sdot('gas-dot','gas-txt','green','URL configured in CF Worker ✓')
+      :sdot('gas-dot','gas-txt','amber','GAS URL not set — open ⚙ Settings');
+  }catch{sdot('gas-dot','gas-txt','red','CF Worker unreachable');}
 }
+
+// ── MANIFEST SCAN ────────────────────────────────
+document.getElementById('btn-manifest').addEventListener('click',async()=>{
+  const chk=await cf({action:'gas.getUrl'}).catch(()=>({configured:false}));
+  if(!chk.configured){
+    log('GAS URL not set. Open ⚙ Settings → paste GAS web app URL → Save.','warn');
+    sOpen();return;
+  }
+  const btn=document.getElementById('btn-manifest');
+  btn.disabled=true;btn.textContent='⏳ Scanning…';
+  log('Starting manifest scan — reading entire Drive, zero writes…','info');
+  log('Takes 1–3 min for large drives. Keep page open.','dim');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.manifest'});
+    if(d.ok){
+      log('✓ Scan complete: '+d.count.toLocaleString()+' files mapped','ok');
+      log('  Saved → Drive/DriveCore/'+d.fileName,'ok');
+      if(d.error_count>0)log('  Skipped '+d.error_count+' folders (permission denied)','warn');
+      if(d.topFolders?.length)log('  Top folders: '+d.topFolders.map(f=>f.name).join(', '),'dim');
+      S.set('stats',{files:d.count,lastRun:new Date().toISOString(),pending:null,dupes:null});
+      loadStats();
+      toast('Manifest done — '+d.count.toLocaleString()+' files. Review in Drive then continue to Step 3.');
+    }else{log('Scan failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){
+    log('Network error: '+e.message,'err');
+    log('Check: CF Worker live, GAS URL set, GAS deployed as Anyone-with-Google-account','dim');
+  }
+  btn.disabled=false;btn.textContent='▶ Scan Drive Now';
+});
+
+// ── SETTINGS ─────────────────────────────────────
+function sOpen(){document.getElementById('settings').classList.add('open');loadSettingsUI();}
+function sClose(){document.getElementById('settings').classList.remove('open');}
+document.getElementById('btn-settings').addEventListener('click',sOpen);
+document.getElementById('s-x').addEventListener('click',sClose);
+document.getElementById('s-ov').addEventListener('click',sClose);
+
+function loadSettingsUI(){
+  const cfg=S.get('settings')||{};
+  document.getElementById('sl-arch').value=cfg.archiveMo??6;
+  document.getElementById('sl-val').textContent=cfg.archiveMo??6;
+  document.getElementById('sel-name').value=cfg.namingFmt||'date-title';
+  document.getElementById('tog-wh').checked=cfg.webhook||false;
+  document.getElementById('sel-lock').value=cfg.autolock??30;
+  if(cfg.gemKey){document.getElementById('gem-key').value='•'.repeat(20);sdot('gem-dot','gem-txt','green','Key saved ✓');}
+  cf({action:'gas.getUrl'}).then(d=>{
+    if(d.configured){
+      document.getElementById('gas-url').placeholder=d.preview;
+      sdot('gas-dot','gas-txt','green','Saved in CF Worker ✓');
+    }else{sdot('gas-dot','gas-txt','amber','Not set');}
+  }).catch(()=>{});
+}
+
+function saveCfg(){
+  const cfg=S.get('settings')||{};
+  cfg.archiveMo=parseInt(document.getElementById('sl-arch').value);
+  cfg.namingFmt=document.getElementById('sel-name').value;
+  cfg.webhook=document.getElementById('tog-wh').checked;
+  cfg.autolock=parseInt(document.getElementById('sel-lock').value);
+  S.set('settings',cfg);
+}
+
+document.getElementById('sl-arch').addEventListener('input',e=>{
+  document.getElementById('sl-val').textContent=e.target.value;saveCfg();
+});
+['sel-name','tog-wh','sel-lock'].forEach(id=>document.getElementById(id).addEventListener('change',saveCfg));
+
+// Save GAS URL
+document.getElementById('btn-gas').addEventListener('click',async()=>{
+  const url=document.getElementById('gas-url').value.trim();
+  if(!url||!url.startsWith('http')){sdot('gas-dot','gas-txt','red','Enter a valid URL');return;}
+  sdot('gas-dot','gas-txt','amber','Saving…');
+  const d=await cf({action:'gas.setUrl',url}).catch(()=>({ok:false}));
+  if(d.ok){sdot('gas-dot','gas-txt','green','Saved in CF Worker ✓');toast('GAS URL saved — works from any device now.');}
+  else sdot('gas-dot','gas-txt','red','Save failed');
+});
+
+// Save Gemini key
+document.getElementById('btn-gem').addEventListener('click',()=>{
+  const val=document.getElementById('gem-key').value.trim();
+  if(!val||val.startsWith('•'))return;
+  const cfg=S.get('settings')||{};cfg.gemKey=val;S.set('settings',cfg);
+  document.getElementById('gem-key').value='•'.repeat(20);
+  sdot('gem-dot','gem-txt','green','Key saved ✓');toast('Gemini key saved.');
+});
 
 // Change PIN
-document.getElementById('btn-chgpin').addEventListener('click', async () => {
-  const cur = document.getElementById('pin-cur').value;
-  const nw = document.getElementById('pin-new').value;
-  const cnf = document.getElementById('pin-cnf').value;
-  const msg = id => { document.getElementById('pin-msg').textContent=id; document.getElementById('pin-msg').className='lock-msg'+(id.includes('✓')?'':' error'); };
-  if (nw.length < 4) { msg('New PIN must be 4–6 digits'); return; }
-  if (nw !== cnf) { msg("PINs don't match"); return; }
-  const curH = await sha256(cur);
-  if (curH !== S.get('pin_hash')) { msg('Current PIN incorrect'); return; }
-  S.set('pin_hash', await sha256(nw));
-  ['pin-cur','pin-new','pin-cnf'].forEach(id => { document.getElementById(id).value=''; });
-  msg('PIN updated ✓');
-  setTimeout(() => { document.getElementById('pin-msg').textContent=''; }, 2000);
+document.getElementById('btn-pin').addEventListener('click',async()=>{
+  const cur=document.getElementById('pin-cur').value;
+  const nw=document.getElementById('pin-new').value;
+  const cf2=document.getElementById('pin-cf').value;
+  if(!cur||!nw||!cf2)return msg('pin-msg','Fill in all three fields','err');
+  if(nw.length<4)return msg('pin-msg','PIN must be 4–6 digits','err');
+  if(nw!==cf2)return msg('pin-msg',"PINs don't match",'err');
+  if(await sha256(cur)!==S.get('pin_hash'))return msg('pin-msg','Current PIN wrong','err');
+  S.set('pin_hash',await sha256(nw));
+  ['pin-cur','pin-new','pin-cf'].forEach(id=>document.getElementById(id).value='');
+  msg('pin-msg','PIN updated ✓','ok');
+  setTimeout(()=>msg('pin-msg',''),2000);
 });
 
 // Reset
-document.getElementById('btn-reset').addEventListener('click', () => {
-  if (!confirm('Delete all local DriveCore data? This cannot be undone.')) return;
-  ['pin_hash','settings','stats'].forEach(k => S.rm(k));
+document.getElementById('btn-reset').addEventListener('click',()=>{
+  if(!confirm('Delete all local DriveCore data?'))return;
+  ['stats','settings','pin_hash'].forEach(k=>S.rm(k));
   location.reload();
 });
 
-// ── LOG ──────────────────────────────────────────────────────────────────────
-function log(msg, type) {
-  const out = document.getElementById('log-out');
-  const line = document.createElement('span');
-  line.className = 'll ' + (type||'info');
-  line.textContent = '['+new Date().toLocaleTimeString()+'] '+msg+'\n';
-  if (out.querySelector('.dim')) out.innerHTML='';
-  out.appendChild(line);
-  out.scrollTop = out.scrollHeight;
-}
-document.getElementById('log-clr').addEventListener('click', () => {
-  document.getElementById('log-out').innerHTML='<span class="ll dim">Log cleared.\n</span>';
-});
-
-// ── STATS ────────────────────────────────────────────────────────────────────
-function loadStats() {
-  const s = S.get('stats') || {};
-  document.getElementById('sv-run').textContent = s.date ? new Date(s.date).toLocaleDateString() : 'Never';
-  document.getElementById('sv-files').textContent = s.count != null ? s.count.toLocaleString() : '—';
-  document.getElementById('sv-err').textContent = s.error_count != null ? s.error_count : '—';
-  document.getElementById('sv-dupes').textContent = s.dupes != null ? s.dupes : '—';
-}
-
-// ── MANIFEST SCAN ────────────────────────────────────────────────────────────
-document.getElementById('btn-manifest').addEventListener('click', async () => {
-  const gasCheck = await gw({action:'gas.getUrl'}).catch(()=>({configured:false}));
-  if (!gasCheck.configured) {
-    log('GAS URL not set — open Settings and save your GAS web app URL first.', 'warn');
-    openSettings();
-    return;
-  }
-
-  const btn = document.getElementById('btn-manifest');
-  btn.disabled = true;
-  btn.textContent = '⏳ Scanning…';
-  log('Starting manifest scan — walking entire Drive (read-only, no changes)…', 'info');
-  log('This may take 1–3 minutes depending on Drive size.', 'dim');
-
-  try {
-    const r = await gw({action:'gas.proxy', gasAction:'dc.manifest'});
-    if (r.ok) {
-      log('Manifest complete: ' + r.count.toLocaleString() + ' files mapped', 'ok');
-      log('Saved to Drive: DriveCore/' + r.fileName, 'ok');
-      if (r.error_count > 0) log(r.error_count + ' folder(s) skipped (permission/access errors)', 'warn');
-      log('Top-level folders: ' + (r.topFolders||[]).map(f=>f.name).join(', '), 'dim');
-      const stats = { count: r.count, error_count: r.error_count, date: new Date().toISOString(), fileId: r.fileId, fileName: r.fileName, dupes: null };
-      S.set('stats', stats);
-      loadStats();
-    } else {
-      log('Scan failed: ' + (r.error || JSON.stringify(r)), 'err');
-    }
-  } catch(e) {
-    log('Network error: ' + e.message, 'err');
-  }
-
-  btn.disabled = false;
-  btn.textContent = '▶ Scan Drive Now';
-});
-
-// ── INIT ─────────────────────────────────────────────────────────────────────
-initPin();
+initLock();
 </script>
 </body>
 </html>
