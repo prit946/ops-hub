@@ -173,8 +173,11 @@ select.field{cursor:pointer}
       <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
       <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
     </div>
+    <input type="password" id="pin-kbd" inputmode="numeric" maxlength="6"
+      style="position:absolute;opacity:0;width:1px;height:1px;left:-9999px" autocomplete="off">
     <div class="keypad" id="keypad"></div>
     <div class="lk-msg" id="lk-msg"></div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:-8px">Tap keypad or use your keyboard</div>
   </div>
 </div>
 
@@ -269,28 +272,38 @@ select.field{cursor:pointer}
       <div class="badge b-pend">3</div>
       <div class="step-body">
         <div class="step-name">Taxonomy Engine</div>
-        <div class="step-desc">Gemini classifies files → proposed folder structure JSON. You approve before any file moves.</div>
+        <div class="step-desc">Rules route known files instantly. Gemini classifies the rest. Saves a move plan to Drive — review before anything moves.</div>
+        <div class="step-cta"><button class="btn btn-s btn-sm" id="btn-taxonomy">⚡ Build Taxonomy</button></div>
       </div>
     </div>
     <div class="step">
       <div class="badge b-pend">4</div>
       <div class="step-body">
-        <div class="step-name">Dry Run</div>
-        <div class="step-desc">Simulates all moves, renames, archives. Outputs log. Zero actual changes made.</div>
+        <div class="step-name">Dry Run &amp; Dedupe</div>
+        <div class="step-desc">See exactly what moves before committing. Dedupe finds duplicate files and archives the older copy, keeps newest.</div>
+        <div class="step-cta" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-s btn-sm" id="btn-dryrun">🔍 Dry Run</button>
+          <button class="btn btn-s btn-sm" id="btn-dedupe-dry">🗂 Find Dupes</button>
+        </div>
       </div>
     </div>
     <div class="step">
       <div class="badge b-pend">5</div>
       <div class="step-body">
         <div class="step-name">Execute</div>
-        <div class="step-desc">Applies approved changes in batches of 100. Every action logged in Drive. Reversible via Archive.</div>
+        <div class="step-desc">Moves files in batches of 50. Every action logged. Nothing permanently deleted — archived or moved only.</div>
+        <div class="step-cta" style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-p btn-sm" id="btn-execute">▶ Execute Moves</button>
+          <button class="btn btn-s btn-sm" id="btn-dedupe-live">🗂 Dedupe (live)</button>
+        </div>
       </div>
     </div>
     <div class="step">
       <div class="badge b-pend">6</div>
       <div class="step-body">
         <div class="step-name">Ongoing Mode</div>
-        <div class="step-desc">Weekly GAS trigger + webhook on SORT ME. Only processes files changed since last run. Summary report each time.</div>
+        <div class="step-desc">Scans files modified in last 7 days. Drop anything in SORT ME — DriveCore routes it. Run weekly check anytime.</div>
+        <div class="step-cta"><button class="btn btn-s btn-sm" id="btn-ongoing">⏱ Run Weekly Check</button></div>
       </div>
     </div>
   </div>
@@ -425,10 +438,27 @@ async function initLock(){
     b.className='key'+(k===''?' blank':k==='⌫'?' del':'');
     b.textContent=k;
     if(k){
-      b.addEventListener('click',()=>kpPress(k));
-      b.addEventListener('touchend',(e)=>{e.preventDefault();kpPress(k);});
+      b.addEventListener('pointerdown',(e)=>{e.preventDefault();kpPress(k);});
     }
     kp.appendChild(b);
+  });
+
+  // Keyboard support — focus hidden input, route keypresses
+  const kbd=document.getElementById('pin-kbd');
+  document.getElementById('lock').addEventListener('click',()=>kbd.focus());
+  kbd.focus();
+  kbd.addEventListener('input',function(){
+    const val=this.value.replace(/\D/g,'');
+    this.value=val;
+    // Sync to pin buffer and dots
+    pinBuf=val;
+    dots(pinBuf.length);
+    if(pinBuf.length>=4){const p=pinBuf;pinBuf='';this.value='';checkPin(p);}
+  });
+  document.addEventListener('keydown',function(e){
+    if(document.getElementById('lock').style.display==='none')return;
+    if(e.key>='0'&&e.key<='9')kpPress(e.key);
+    else if(e.key==='Backspace')kpPress('⌫');
   });
 }
 
@@ -570,6 +600,112 @@ document.getElementById('btn-manifest').addEventListener('click',async()=>{
     log('Check: CF Worker live, GAS URL set, GAS deployed as Anyone-with-Google-account','dim');
   }
   btn.disabled=false;btn.textContent='▶ Scan Drive Now';
+});
+
+// ── TAXONOMY ─────────────────────────────────────
+document.getElementById('btn-taxonomy').addEventListener('click',async()=>{
+  const chk=await cf({action:'gas.getUrl'}).catch(()=>({configured:false}));
+  if(!chk.configured){log('GAS URL not set — open ⚙ Settings first.','warn');sOpen();return;}
+  const btn=document.getElementById('btn-taxonomy');
+  btn.disabled=true;btn.textContent='⏳ Classifying…';
+  log('Building taxonomy — rules first, then Gemini for ambiguous files…','info');
+  log('This may take 2–5 min depending on Drive size and Gemini quota.','dim');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.taxonomy'});
+    if(d.ok){
+      log('✓ Taxonomy done: '+d.total+' files — '+d.moves+' to move, '+d.keeps+' already correct, '+d.reviews+' need review','ok');
+      log('  '+d.geminiClassified+' files classified by Gemini','dim');
+      log('  Plan saved → Drive/DriveCore/'+d.planFileName,'ok');
+      log('  Review the plan in Drive, then run Dry Run or Execute.','info');
+      const st=S.get('stats')||{};st.pending=d.moves;S.set('stats',st);loadStats();
+    }else{log('Taxonomy failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){log('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='⚡ Build Taxonomy';
+});
+
+// ── DRY RUN ───────────────────────────────────────
+document.getElementById('btn-dryrun').addEventListener('click',async()=>{
+  const btn=document.getElementById('btn-dryrun');
+  btn.disabled=true;btn.textContent='⏳ Simulating…';
+  log('Dry run — simulating all moves (no actual changes)…','info');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.execute',params:{dryRun:true,batchSize:100}});
+    if(d.ok){
+      log('✓ Dry run complete: '+d.done+' moves simulated, '+d.errors+' errors','ok');
+      log('  Log saved → Drive/DriveCore/'+d.logFileName,'dim');
+      if(d.hasMore)log('  More files remain — run again with offset '+d.nextOffset,'warn');
+    }else{log('Dry run failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){log('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='🔍 Dry Run';
+});
+
+// ── DEDUPE (dry) ──────────────────────────────────
+document.getElementById('btn-dedupe-dry').addEventListener('click',async()=>{
+  const btn=document.getElementById('btn-dedupe-dry');
+  btn.disabled=true;btn.textContent='⏳ Scanning…';
+  log('Finding duplicates (dry run — no changes yet)…','info');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.dedupe',params:{dryRun:true}});
+    if(d.ok){
+      log('✓ Dedupe scan: '+d.dupesFound+' duplicate sets found','ok');
+      log('  Report saved → Drive/DriveCore/'+d.logFileName,'dim');
+      log('  Run "Dedupe (live)" in Step 5 to archive the older copies.','info');
+      const st=S.get('stats')||{};st.dupes=d.dupesFound;S.set('stats',st);loadStats();
+    }else{log('Dedupe failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){log('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='🗂 Find Dupes';
+});
+
+// ── EXECUTE ───────────────────────────────────────
+document.getElementById('btn-execute').addEventListener('click',async()=>{
+  if(!confirm('Execute all approved moves from the taxonomy plan?\nThis will move files in Drive. Nothing is permanently deleted.'))return;
+  const btn=document.getElementById('btn-execute');
+  btn.disabled=true;btn.textContent='⏳ Moving files…';
+  log('Executing moves — files moving to correct folders now…','info');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.execute',params:{dryRun:false,batchSize:50}});
+    if(d.ok){
+      log('✓ Batch done: '+d.done+' files moved, '+d.errors+' errors','ok');
+      log('  Log → Drive/DriveCore/'+d.logFileName,'dim');
+      if(d.hasMore){log('  More files remain — tap Execute again (offset '+d.nextOffset+')','warn');}
+      else{log('  All moves complete.','ok');}
+    }else{log('Execute failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){log('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='▶ Execute Moves';
+});
+
+// ── DEDUPE (live) ─────────────────────────────────
+document.getElementById('btn-dedupe-live').addEventListener('click',async()=>{
+  if(!confirm('Archive all duplicate files? Older copies move to Drive/DriveCore/Dupes Review. Newest copy kept.'))return;
+  const btn=document.getElementById('btn-dedupe-live');
+  btn.disabled=true;btn.textContent='⏳ Archiving…';
+  log('Deduplicating — archiving older copies…','info');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.dedupe',params:{dryRun:false}});
+    if(d.ok){
+      log('✓ Dedupe live: '+d.dupesFound+' dupes found, '+d.archived+' archived','ok');
+      log('  Check Drive/DriveCore/Dupes Review before emptying.','dim');
+      const st=S.get('stats')||{};st.dupes=0;S.set('stats',st);loadStats();
+    }else{log('Dedupe failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){log('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='🗂 Dedupe (live)';
+});
+
+// ── ONGOING ───────────────────────────────────────
+document.getElementById('btn-ongoing').addEventListener('click',async()=>{
+  const btn=document.getElementById('btn-ongoing');
+  btn.disabled=true;btn.textContent='⏳ Checking…';
+  log('Running weekly check — scanning files modified in last 7 days…','info');
+  try{
+    const d=await cf({action:'gas.proxy',gasAction:'dc.ongoing'});
+    if(d.ok){
+      log('✓ Weekly check: '+d.recentFiles+' recent files scanned','ok');
+      log('  SORT ME files: '+d.sortMeFiles,'d.sortMeFiles>0'?'warn':'dim');
+      log('  '+d.message,'info');
+      const st=S.get('stats')||{};st.lastRun=new Date().toISOString();S.set('stats',st);loadStats();
+    }else{log('Ongoing check failed: '+(d.error||JSON.stringify(d)),'err');}
+  }catch(e){log('Error: '+e.message,'err');}
+  btn.disabled=false;btn.textContent='⏱ Run Weekly Check';
 });
 
 // ── SETTINGS ─────────────────────────────────────
