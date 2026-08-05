@@ -1,0 +1,19 @@
+{
+  "name": "PritOS",
+  "short_name": "PritOS",
+  "description": "Personal OS — tools, projects, store, infrastructure",
+  "start_url": "/ops-hub/",
+  "display": "standalone",
+  "background_color": "#0d0a1a",
+  "theme_color": "#8b5cf6",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "DriveCore", "url": "/ops-hub/drivecore.html", "description": "Auto-organize Google Drive" },
+    { "name": "Store Hub", "url": "https://prit946.github.io/store8181-hub/", "description": "UPS Store 8181 tools" },
+    { "name": "QA", "url": "/ops-hub/qa.html", "description": "System status check" }
+  ]
+}

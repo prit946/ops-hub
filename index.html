@@ -7,6 +7,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PritOS</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PritOS">
+<meta name="theme-color" content="#0d0a1a">
 <style>
 :root{
   --bg:#0d0a1a;--s1:#1a1130;--s2:#231848;--bd:#3d2d6b;--bd2:#5b4394;
@@ -26,6 +31,25 @@
 html{background:var(--bg)}
 body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100dvh;font-size:14px;line-height:1.5;overflow-x:hidden;padding-bottom:calc(68px + env(safe-area-inset-bottom))}
 
+/* ── PIN LOCK (PritOS level) ── */
+#pritos-lock{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
+.plk-wrap{width:100%;max-width:300px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:18px}
+.plk-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff;box-shadow:0 8px 24px rgba(139,92,246,.35)}
+.plk-title{font-size:20px;font-weight:900;letter-spacing:-.5px}
+.plk-title span{color:var(--acc)}
+.plk-dots{display:flex;gap:12px}
+.plk-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--bd2);background:transparent;transition:all .1s}
+.plk-dot.on{background:var(--acc);border-color:var(--acc)}
+.plk-dot.err{background:var(--red);border-color:var(--red);animation:shake .35s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.plk-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:100%}
+.plk-key{height:54px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);font-size:19px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;user-select:none;transition:background .1s,transform .08s;touch-action:manipulation}
+.plk-key:active{background:var(--bd2);transform:scale(0.95)}
+.plk-key.del{font-size:14px;color:var(--mn)}
+.plk-key.blank{background:transparent;border:none;pointer-events:none}
+.plk-msg{font-size:11px;color:var(--mn);min-height:16px}
+.plk-msg.err{color:var(--red)}
+
 /* ── HEADER ── */
 .hdr{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;background:var(--s1);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:50}
 .hdr-brand{display:flex;align-items:center;gap:10px}
@@ -41,9 +65,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 
 /* ── BOTTOM NAV ── */
 .bnav{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-top:1px solid var(--bd);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:50}
-.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;cursor:pointer;background:none;border:none;color:var(--mn);font-family:var(--font);font-size:9px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:color .15s;border-top:2px solid transparent;position:relative}
+.bnav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px 8px;cursor:pointer;background:none;border:none;color:var(--mn);font-family:var(--font);font-size:8px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;transition:color .15s;border-top:2px solid transparent;position:relative}
 .bnav-btn.active{color:var(--acc);border-top-color:var(--acc)}
-.bnav-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bnav-btn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* ── TABS ── */
 .tab{display:none;padding:16px 16px 8px;max-width:600px;margin:0 auto}
@@ -59,8 +83,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .card-title{font-size:14px;font-weight:700;color:var(--tx)}
 .card-body{padding:10px 14px 14px}
 .card-desc{font-size:11px;color:var(--mn);line-height:1.55;margin-top:4px}
-
-/* Accent left border variants */
 .card.acc{border-left:3px solid var(--acc)}
 .card.grn{border-left:3px solid var(--grn)}
 .card.amb{border-left:3px solid var(--amb)}
@@ -91,8 +113,9 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .btn-p:hover{background:var(--acc2)}
 .btn-s{background:var(--s2);color:var(--mx);border:1px solid var(--bd)}
 .btn-s:hover{border-color:var(--bd2);color:var(--tx)}
+.btn-d{background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.3)}
 .btn-sm{padding:5px 10px;font-size:11px}
-.btn-fw{width:100%}
+.btn-fw{width:100%;justify-content:center}
 
 /* ── FIELDS ── */
 .field{width:100%;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r-sm);color:var(--tx);font-size:12px;font-family:var(--font);margin-top:6px;outline:none;transition:border-color .15s}
@@ -108,11 +131,12 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 .sdot-c.red{background:var(--red)}
 .sdot span{font-size:11px;color:var(--mn)}
 
-/* ── HOME TAB ── */
-.hero{padding:20px 0 10px;text-align:center}
+/* ── HOME ── */
+.hero{padding:18px 0 8px;text-align:center}
 .hero-title{font-size:28px;font-weight:900;letter-spacing:-1px;color:var(--tx)}
 .hero-title span{color:var(--acc)}
 .hero-sub{font-size:12px;color:var(--mn);margin-top:4px}
+.hero-weather{font-size:11px;color:var(--mn);margin-top:3px}
 .health-row{display:flex;gap:8px;margin:14px 0}
 .health-pill{flex:1;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:10px;text-align:center}
 .health-pill .h-val{font-size:11px;font-weight:700;margin-bottom:2px}
@@ -124,6 +148,10 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 .qa-btn-name{font-size:13px;font-weight:700}
 .qa-btn-desc{font-size:10px;color:var(--mn)}
 .qa-btn-arr{color:var(--mn)}
+
+/* ── CAPTURE ── */
+.capture-row{display:flex;gap:6px;align-items:flex-start;margin-top:6px}
+.capture-row textarea{flex:1;margin-top:0;min-height:58px}
 
 /* ── PROJECT CARDS ── */
 .proj-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:12px;overflow:hidden;transition:border-color .15s}
@@ -140,6 +168,13 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 .save-note-btn{background:none;border:none;color:var(--mn);font-size:10px;cursor:pointer;padding:2px 6px;border-radius:3px;font-family:var(--font)}
 .save-note-btn:hover{color:var(--acc)}
 .save-note-btn.saved{color:var(--grn)}
+.proj-card.acc{border-left:3px solid var(--acc)}
+.proj-card.blue{border-left:3px solid var(--blue)}
+.proj-card.amb{border-left:3px solid var(--amb)}
+
+/* ── QR ── */
+.qr-out{display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:12px}
+.qr-out img{border-radius:8px;border:4px solid #fff;width:180px;height:180px}
 
 /* ── LINK ITEMS ── */
 .link-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--bd)}
@@ -157,6 +192,28 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 .infra-name{font-size:12px;font-weight:700;color:var(--tx)}
 .infra-sub{font-size:10px;color:var(--mn)}
 
+/* ── SETTINGS ── */
+.set-section{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:14px;overflow:hidden}
+.set-hd{padding:13px 14px;font-size:12px;font-weight:800;color:var(--tx);border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:8px}
+.set-body{padding:14px}
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--bd);gap:12px}
+.set-row:last-child{border-bottom:none}
+.set-lbl{font-size:12px;font-weight:700;color:var(--tx);flex-shrink:0}
+.set-sub{font-size:10px;color:var(--mn);margin-top:1px}
+.set-val{font-size:11px;color:var(--mn);font-family:var(--mono)}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:var(--bd2);border-radius:22px;cursor:pointer;transition:.2s}
+.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.toggle-slider{background:var(--acc)}
+input:checked+.toggle-slider:before{transform:translateX(18px)}
+.pin-inputs{display:flex;gap:6px;margin:10px 0}
+.pin-inputs input{flex:1;text-align:center;font-size:16px;padding:10px;font-family:var(--mono);letter-spacing:2px}
+.about-ver{font-size:10px;color:var(--mn);text-align:center;padding:8px 0}
+.set-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}
+.set-badge.ok{background:rgba(52,211,153,.15);color:var(--grn);border:1px solid rgba(52,211,153,.25)}
+.set-badge.off{background:rgba(148,163,184,.1);color:var(--mn);border:1px solid var(--bd)}
+
 /* ── TOAST ── */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--s2);color:var(--tx);padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;pointer-events:none;transition:all .22s;z-index:999;border:1px solid var(--bd);white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -165,6 +222,27 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 </style>
 </head>
 <body>
+
+<!-- ════ PRITOS PIN LOCK (optional, disabled by default) ════ -->
+<div id="pritos-lock" style="display:none">
+  <div class="plk-wrap">
+    <div class="plk-logo">P</div>
+    <div class="plk-title">Prit<span>OS</span></div>
+    <div class="plk-dots">
+      <div class="plk-dot" id="pd0"></div>
+      <div class="plk-dot" id="pd1"></div>
+      <div class="plk-dot" id="pd2"></div>
+      <div class="plk-dot" id="pd3"></div>
+    </div>
+    <div class="plk-msg" id="plk-msg">Enter your PritOS PIN</div>
+    <div class="plk-keypad">
+      <button class="plk-key" onclick="pkIn('1')">1</button><button class="plk-key" onclick="pkIn('2')">2</button><button class="plk-key" onclick="pkIn('3')">3</button>
+      <button class="plk-key" onclick="pkIn('4')">4</button><button class="plk-key" onclick="pkIn('5')">5</button><button class="plk-key" onclick="pkIn('6')">6</button>
+      <button class="plk-key" onclick="pkIn('7')">7</button><button class="plk-key" onclick="pkIn('8')">8</button><button class="plk-key" onclick="pkIn('9')">9</button>
+      <button class="plk-key blank"></button><button class="plk-key" onclick="pkIn('0')">0</button><button class="plk-key del" onclick="pkDel()">⌫</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -186,6 +264,7 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
   <div class="hero">
     <div class="hero-title">Prit<span>OS</span></div>
     <div class="hero-sub" id="home-time">Loading…</div>
+    <div class="hero-weather" id="home-weather"></div>
   </div>
 
   <div class="health-row">
@@ -196,7 +275,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
   </div>
 
   <div class="s-hd">Quick Launch</div>
-
   <a class="qa-btn" href="drivecore.html">
     <div class="qa-btn-l"><div class="qa-btn-icon">☁</div><div><div class="qa-btn-name">DriveCore</div><div class="qa-btn-desc">Auto-organize Google Drive · PIN protected</div></div></div>
     <span class="qa-btn-arr">›</span>
@@ -214,6 +292,21 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
     <span class="qa-btn-arr">›</span>
   </a>
 
+  <div class="s-hd">Quick Capture</div>
+  <div class="card acc">
+    <div class="card-body">
+      <div class="card-desc" style="margin-bottom:6px">Tap · type · save. Synced to KV — access from any device.</div>
+      <div class="capture-row">
+        <textarea class="field" id="capture-text" rows="3" placeholder="Thought, reminder, link, task…"></textarea>
+        <button class="btn btn-p" style="flex-shrink:0;padding:10px 12px" onclick="saveCapture()">→</button>
+      </div>
+      <div id="capture-saved" style="margin-top:8px;font-size:11px;color:var(--mn);display:none">
+        <div style="font-weight:700;color:var(--acc-l);margin-bottom:4px">Saved captures:</div>
+        <div id="capture-list"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="s-hd">Context Hub</div>
   <div class="card acc">
     <div class="card-body">
@@ -230,7 +323,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 <!-- ════════════════ STORE ════════════════ -->
 <section class="tab" id="tab-store">
   <div class="s-hd">UPS Store 8181 — Joelton, TN</div>
-
   <div class="card grn">
     <div class="card-hd"><span class="card-title">📊 Z Report</span><span class="badge live">Daily Tool</span></div>
     <div class="card-body">
@@ -238,7 +330,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <a href="https://prit946.github.io/store8181-hub/zreport.html" target="_blank" class="btn btn-p" style="margin-top:10px;text-decoration:none">Open Z Report →</a>
     </div>
   </div>
-
   <div class="card acc">
     <div class="card-hd"><span class="card-title">💰 Royalty Calculator</span><span class="badge live">Monthly</span></div>
     <div class="card-body">
@@ -246,7 +337,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <a href="https://prit946.github.io/store8181-hub/royalty.html" target="_blank" class="btn btn-s btn-sm" style="margin-top:10px;text-decoration:none">Open →</a>
     </div>
   </div>
-
   <div class="card">
     <div class="card-hd"><span class="card-title">🔐 Credentials</span></div>
     <div class="card-body">
@@ -254,7 +344,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <a href="https://prit946.github.io/store8181-hub/credentials.html" target="_blank" class="btn btn-s btn-sm" style="margin-top:10px;text-decoration:none">Open →</a>
     </div>
   </div>
-
   <div class="s-hd">Store Hub</div>
   <div class="card">
     <div class="card-body" style="padding:12px 14px">
@@ -264,7 +353,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <div class="row"><span class="row-lbl">Repo</span><span class="row-val"><a href="https://github.com/prit946/store8181-hub" target="_blank">github/store8181-hub →</a></span></div>
     </div>
   </div>
-
   <div class="s-hd">Notes</div>
   <div class="card">
     <div class="card-body">
@@ -280,8 +368,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 <!-- ════════════════ PROJECTS ════════════════ -->
 <section class="tab" id="tab-projects">
   <div class="s-hd">Active Projects</div>
-
-  <!-- DriveCore -->
   <div class="proj-card acc">
     <div class="proj-hd" onclick="toggleProj('drivecore')">
       <div><div class="proj-name">☁ DriveCore</div><div class="proj-sub">Google Drive auto-organizer · PIN protected</div></div>
@@ -293,9 +379,9 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
         <a class="proj-link" href="https://github.com/prit946/ops-hub" target="_blank">ops-hub repo</a>
         <a class="proj-link" href="https://script.google.com/home/projects/1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf/edit" target="_blank">GAS Script</a>
       </div>
-      <div class="row"><span class="row-lbl">GAS</span><span class="row-val mono">v54 — learned rules, pending review</span></div>
+      <div class="row"><span class="row-lbl">GAS</span><span class="row-val mono">v56 — learned rules, short folder names</span></div>
       <div class="row"><span class="row-lbl">Trigger</span><span class="row-val mono">dcOngoing — Sundays 2am</span></div>
-      <div class="row"><span class="row-lbl">NAS</span><span class="row-val mono">Planned — MD doc in KV (ctx-get drivecore-nas)</span></div>
+      <div class="row"><span class="row-lbl">NAS</span><span class="row-val mono">Planned — MD in KV (drivecore-nas)</span></div>
       <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
         <span class="proj-notes-lbl">Notes</span>
         <button class="save-note-btn" id="save-note-drivecore" onclick="saveNote('drivecore')">Save</button>
@@ -304,8 +390,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <button class="btn btn-s btn-sm" style="margin-top:8px;width:100%" onclick="copyPrompt('drivecore')">Copy Session Prompt</button>
     </div>
   </div>
-
-  <!-- BrainOS -->
   <div class="proj-card blue">
     <div class="proj-hd" onclick="toggleProj('brainos')">
       <div><div class="proj-name">🧠 BrainOS</div><div class="proj-sub">ADHD productivity app · Render.com</div></div>
@@ -326,8 +410,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <button class="btn btn-s btn-sm" style="margin-top:8px;width:100%" onclick="copyPrompt('brainos')">Copy Session Prompt</button>
     </div>
   </div>
-
-  <!-- Business Ops -->
   <div class="proj-card amb">
     <div class="proj-hd" onclick="toggleProj('bizops')">
       <div><div class="proj-name">💼 Business Ops</div><div class="proj-sub">Business operations dashboard</div></div>
@@ -348,8 +430,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <button class="btn btn-s btn-sm" style="margin-top:8px;width:100%" onclick="copyPrompt('bizops')">Copy Session Prompt</button>
     </div>
   </div>
-
-  <!-- CF Gateway -->
   <div class="proj-card">
     <div class="proj-hd" onclick="toggleProj('cfgateway')">
       <div><div class="proj-name">⚡ CF Gateway Worker</div><div class="proj-sub">Cloudflare Worker — all tools route through this</div></div>
@@ -370,7 +450,6 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
       <textarea class="field" id="note-cfgateway" rows="2" placeholder="Notes…"></textarea>
     </div>
   </div>
-
   <div class="s-hd">Add New Project</div>
   <div class="card">
     <div class="card-body">
@@ -385,14 +464,28 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 <!-- ════════════════ TOOLS ════════════════ -->
 <section class="tab" id="tab-tools">
   <div class="s-hd">AI Tools</div>
-
   <a class="qa-btn" href="gemini.html">
     <div class="qa-btn-l"><div class="qa-btn-icon">✦</div><div><div class="qa-btn-name">Gemini AI Studio</div><div class="qa-btn-desc">Chat · summarize · classify · per-project instructions</div></div></div>
     <span class="qa-btn-arr">›</span>
   </a>
 
-  <div class="s-hd">System Tools</div>
+  <div class="s-hd">QR Code Generator</div>
+  <div class="card acc">
+    <div class="card-body">
+      <div class="card-desc" style="margin-bottom:8px">Generate QR codes instantly — useful for mailbox pickup, store links, contacts</div>
+      <input type="text" class="field" id="qr-input" placeholder="Text or URL to encode…" style="margin-top:0">
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-p btn-sm" style="flex:1" onclick="genQR()">Generate QR</button>
+        <button class="btn btn-s btn-sm" onclick="dlQR()">Save PNG</button>
+      </div>
+      <div class="qr-out" id="qr-out" style="display:none">
+        <img id="qr-img" src="" alt="QR Code">
+        <div style="font-size:10px;color:var(--mn)" id="qr-val-lbl"></div>
+      </div>
+    </div>
+  </div>
 
+  <div class="s-hd">System Tools</div>
   <a class="qa-btn" href="qa.html">
     <div class="qa-btn-l"><div class="qa-btn-icon">✓</div><div><div class="qa-btn-name">QA Dashboard</div><div class="qa-btn-desc">Ping all services — CF Worker, GAS, GitHub Pages</div></div></div>
     <span class="qa-btn-arr">›</span>
@@ -426,8 +519,8 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
   <div class="card">
     <div class="card-body" style="padding:12px 14px">
       <div class="infra-row"><div><div class="infra-name">CF Worker</div><div class="infra-sub">spring-sea-ac0a.prit946.workers.dev</div></div><span id="inf-gw" class="badge soon">—</span></div>
-      <div class="infra-row"><div><div class="infra-name">GAS Gateway</div><div class="infra-sub">Claude Gateway Script v54+</div></div><span id="inf-gas" class="badge soon">—</span></div>
-      <div class="infra-row"><div><div class="infra-name">GitHub Pages (ops-hub)</div><div class="infra-sub">prit946.github.io/ops-hub</div></div><span id="inf-pages" class="badge soon">—</span></div>
+      <div class="infra-row"><div><div class="infra-name">GAS Gateway</div><div class="infra-sub">Claude Gateway Script v56</div></div><span id="inf-gas" class="badge soon">—</span></div>
+      <div class="infra-row"><div><div class="infra-name">GitHub Pages</div><div class="infra-sub">prit946.github.io/ops-hub</div></div><span id="inf-pages" class="badge soon">—</span></div>
       <div class="infra-row"><div><div class="infra-name">Gemini API Key</div><div class="infra-sub">Stored in CF Worker KV</div></div><span id="inf-gem" class="badge soon">—</span></div>
     </div>
   </div>
@@ -448,7 +541,7 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
   <div class="card amb">
     <div class="card-body">
       <div style="font-size:13px;font-weight:700;margin-bottom:4px">UGREEN NAS — Future DriveCore Target</div>
-      <div class="card-desc">DriveCore v2 will support NAS as a backend alternative to Google Drive. Same taxonomy engine, different storage adapter. Plan documented in KV under <code style="font-size:10px;background:var(--s2);padding:1px 5px;border-radius:3px">drivecore-nas</code>.</div>
+      <div class="card-desc">DriveCore v2 will support NAS as a backend alternative to Google Drive. Same taxonomy engine, different storage adapter.</div>
       <button class="btn btn-s btn-sm" style="margin-top:10px" onclick="loadNasMd()">Load NAS Plan from KV</button>
       <div id="nas-md" style="margin-top:8px;font-size:11px;color:var(--mn);line-height:1.6;white-space:pre-wrap;display:none"></div>
     </div>
@@ -473,6 +566,100 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
   </div>
 </section>
 
+<!-- ════════════════ SETTINGS ════════════════ -->
+<section class="tab" id="tab-settings">
+
+  <div class="set-section">
+    <div class="set-hd">🔐 Access PIN</div>
+    <div class="set-body">
+      <div class="set-row">
+        <div><div class="set-lbl">PritOS Lock</div><div class="set-sub">Require PIN to open PritOS hub</div></div>
+        <label class="toggle"><input type="checkbox" id="pritos-lock-toggle" onchange="togglePritosLock()"><span class="toggle-slider"></span></label>
+      </div>
+      <div id="pritos-pin-section" style="display:none;margin-top:10px">
+        <div style="font-size:11px;color:var(--mn);margin-bottom:8px">Set a 4-digit PIN to lock the hub. Stored as a hash — never plaintext.</div>
+        <div class="pin-inputs">
+          <input type="password" class="field" id="pin-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="New PIN" style="letter-spacing:4px">
+          <input type="password" class="field" id="pin-confirm" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="Confirm">
+        </div>
+        <button class="btn btn-p btn-sm btn-fw" onclick="setPritosPin()">Save PIN</button>
+      </div>
+      <div class="set-row" style="margin-top:8px">
+        <div><div class="set-lbl">DriveCore PIN</div><div class="set-sub">Change the DriveCore tool PIN (currently 4 digits)</div></div>
+        <span class="set-badge ok">Active</span>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:11px;color:var(--mn);margin-bottom:8px">Verify current PIN then set a new one:</div>
+        <div class="pin-inputs">
+          <input type="password" class="field" id="dc-pin-cur" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="Current">
+          <input type="password" class="field" id="dc-pin-new" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="New PIN">
+          <input type="password" class="field" id="dc-pin-cfm" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="Confirm">
+        </div>
+        <button class="btn btn-p btn-sm btn-fw" onclick="changeDcPin()">Change DriveCore PIN</button>
+        <div id="dc-pin-msg" style="font-size:11px;margin-top:6px;color:var(--mn)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="set-section">
+    <div class="set-hd">✦ API Keys</div>
+    <div class="set-body">
+      <div class="set-row">
+        <div><div class="set-lbl">Gemini API Key</div><div class="set-sub">Stored in CF Worker KV (_gemini_key)</div></div>
+        <span class="set-badge" id="gem-set-badge">—</span>
+      </div>
+      <input type="password" class="field" id="gem-key-in" placeholder="Paste new Gemini API key…" style="margin-top:10px">
+      <button class="btn btn-p btn-sm btn-fw" style="margin-top:6px" onclick="saveGemKey()">Save Key to CF Worker</button>
+      <div id="gem-set-msg" style="font-size:11px;margin-top:6px;color:var(--mn)"></div>
+    </div>
+  </div>
+
+  <div class="set-section">
+    <div class="set-hd">⚙ System Config</div>
+    <div class="set-body">
+      <div class="set-row">
+        <div><div class="set-lbl">GAS URL</div><div class="set-sub">Gateway script web app URL</div></div>
+        <span class="set-badge" id="gas-set-badge">—</span>
+      </div>
+      <div style="font-size:10px;color:var(--mn);margin:4px 0 6px">Current: <span id="gas-url-preview" style="font-family:var(--mono)">Loading…</span></div>
+      <input type="text" class="field" id="gas-url-in" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" style="margin-top:0">
+      <button class="btn btn-p btn-sm btn-fw" style="margin-top:6px" onclick="saveGasUrl()">Update GAS URL</button>
+
+      <div class="set-row" style="margin-top:12px">
+        <div><div class="set-lbl">Theme</div><div class="set-sub">Light or dark mode</div></div>
+        <button class="btn btn-s btn-sm" onclick="toggleTheme()">Toggle ◐</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="set-section">
+    <div class="set-hd">ℹ About PritOS</div>
+    <div class="set-body">
+      <div class="set-row">
+        <div class="set-lbl">Version</div>
+        <div class="set-val">2.1 · Aug 2026</div>
+      </div>
+      <div class="set-row">
+        <div class="set-lbl">Hub</div>
+        <div class="set-val"><a href="https://prit946.github.io/ops-hub" target="_blank" style="color:var(--acc-l);text-decoration:none">prit946.github.io/ops-hub →</a></div>
+      </div>
+      <div class="set-row">
+        <div class="set-lbl">Gateway</div>
+        <div class="set-val mono" style="font-size:9px">spring-sea-ac0a.prit946.workers.dev</div>
+      </div>
+      <div class="set-row">
+        <div class="set-lbl">GAS</div>
+        <div class="set-val">Claude Gateway v56</div>
+      </div>
+      <div class="set-row" style="border:none">
+        <div class="set-lbl">Install</div>
+        <div class="set-val" style="color:var(--mn)">Use Share → Add to Home Screen</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
 <!-- BOTTOM NAV -->
 <nav class="bnav">
   <button class="bnav-btn active" id="nav-home" onclick="showTab('home')">
@@ -490,11 +677,17 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
   <button class="bnav-btn" id="nav-infra" onclick="showTab('infra')">
     <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>Infra
   </button>
+  <button class="bnav-btn" id="nav-settings" onclick="showTab('settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+  </button>
 </nav>
 
 <script>
 const CF='https://spring-sea-ac0a.prit946.workers.dev';
 const KEY='Store8181Prit2026';
+
+// ── CRYPTO ──────────────────────────────────────────
+async function sha256(msg){const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(msg));return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');}
 
 // ── UTILS ────────────────────────────────────────────
 async function gw(body){
@@ -516,12 +709,132 @@ function badge(id,cls,txt){const el=document.getElementById(id);if(!el)return;el
 
 // ── THEME ────────────────────────────────────────────
 const root=document.documentElement;
-const saved=localStorage.getItem('pritos-theme');
-if(saved)root.setAttribute('data-theme',saved);
+const savedTheme=localStorage.getItem('pritos-theme');
+if(savedTheme)root.setAttribute('data-theme',savedTheme);
 function toggleTheme(){
   const cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');
   const nxt=cur==='dark'?'light':'dark';
   root.setAttribute('data-theme',nxt);localStorage.setItem('pritos-theme',nxt);
+}
+
+// ── PRITOS PIN LOCK ───────────────────────────────────
+let _pkBuf='';
+const LOCK_KEY='pritos_pin_hash';
+const LOCK_EN_KEY='pritos_lock_enabled';
+
+async function initPritosLock(){
+  const enabled=localStorage.getItem(LOCK_EN_KEY)==='1';
+  const toggle=document.getElementById('pritos-lock-toggle');
+  if(toggle)toggle.checked=enabled;
+  document.getElementById('pritos-pin-section').style.display=enabled?'block':'none';
+  if(!enabled){document.getElementById('pritos-lock').style.display='none';return;}
+  const hash=localStorage.getItem(LOCK_KEY);
+  if(!hash){document.getElementById('pritos-lock').style.display='none';return;}
+  document.getElementById('pritos-lock').style.display='flex';
+}
+function pkIn(d){
+  if(_pkBuf.length>=4)return;
+  _pkBuf+=d;
+  [0,1,2,3].forEach(i=>{const el=document.getElementById('pd'+i);el.className='plk-dot'+(i<_pkBuf.length?' on':'');});
+  if(_pkBuf.length===4)pkCheck();
+}
+function pkDel(){
+  if(!_pkBuf.length)return;
+  _pkBuf=_pkBuf.slice(0,-1);
+  [0,1,2,3].forEach(i=>{const el=document.getElementById('pd'+i);el.className='plk-dot'+(i<_pkBuf.length?' on':'');});
+}
+async function pkCheck(){
+  const hash=localStorage.getItem(LOCK_KEY);
+  const entered=await sha256(_pkBuf);
+  if(entered===hash){
+    document.getElementById('pritos-lock').style.display='none';
+  } else {
+    [0,1,2,3].forEach(i=>document.getElementById('pd'+i).className='plk-dot err');
+    document.getElementById('plk-msg').textContent='Wrong PIN';
+    document.getElementById('plk-msg').className='plk-msg err';
+    setTimeout(()=>{
+      _pkBuf='';
+      [0,1,2,3].forEach(i=>document.getElementById('pd'+i).className='plk-dot');
+      document.getElementById('plk-msg').textContent='Enter your PritOS PIN';
+      document.getElementById('plk-msg').className='plk-msg';
+    },900);
+  }
+}
+function togglePritosLock(){
+  const on=document.getElementById('pritos-lock-toggle').checked;
+  document.getElementById('pritos-pin-section').style.display=on?'block':'none';
+  if(!on){localStorage.removeItem(LOCK_EN_KEY);localStorage.removeItem(LOCK_KEY);}
+}
+async function setPritosPin(){
+  const p1=document.getElementById('pin-new').value;
+  const p2=document.getElementById('pin-confirm').value;
+  if(p1.length<4||p2.length<4)return toast('Enter a 4-digit PIN');
+  if(p1!==p2)return toast('PINs do not match');
+  const hash=await sha256(p1);
+  localStorage.setItem(LOCK_KEY,hash);
+  localStorage.setItem(LOCK_EN_KEY,'1');
+  document.getElementById('pin-new').value='';
+  document.getElementById('pin-confirm').value='';
+  toast('PritOS PIN saved ✓');
+}
+
+// ── DRIVECORE PIN CHANGE ───────────────────────────────
+async function changeDcPin(){
+  const cur=document.getElementById('dc-pin-cur').value;
+  const nw=document.getElementById('dc-pin-new').value;
+  const cfm=document.getElementById('dc-pin-cfm').value;
+  const msg=document.getElementById('dc-pin-msg');
+  if(!cur||!nw||!cfm){msg.textContent='Fill all three fields';msg.style.color='var(--red)';return;}
+  if(nw!==cfm){msg.textContent='New PIN and confirm do not match';msg.style.color='var(--red)';return;}
+  if(nw.length!==4){msg.textContent='PIN must be exactly 4 digits';msg.style.color='var(--red)';return;}
+  const curHash=await sha256(cur);
+  const storedHash=localStorage.getItem('dc_pin_hash');
+  if(storedHash&&curHash!==storedHash){msg.textContent='Current PIN is wrong';msg.style.color='var(--red)';return;}
+  const newHash=await sha256(nw);
+  localStorage.setItem('dc_pin_hash',newHash);
+  localStorage.setItem('dc_pin_v2','1');
+  ['dc-pin-cur','dc-pin-new','dc-pin-cfm'].forEach(id=>document.getElementById(id).value='');
+  msg.textContent='DriveCore PIN updated ✓';msg.style.color='var(--grn)';
+}
+
+// ── SETTINGS LOAD ─────────────────────────────────────
+async function loadSettings(){
+  // Gemini key status
+  const gem=await gw({action:'gemini.check'});
+  const gb=document.getElementById('gem-set-badge');
+  if(gb){gb.textContent=gem.configured?'Set ✓':'Not set';gb.className='set-badge '+(gem.configured?'ok':'off');}
+  // GAS URL
+  const gas=await gw({action:'gas.getUrl'});
+  const gp=document.getElementById('gas-url-preview');
+  const gasb=document.getElementById('gas-set-badge');
+  if(gp)gp.textContent=gas.preview||'Not configured';
+  if(gasb){gasb.textContent=gas.configured?'Set':'Not set';gasb.className='set-badge '+(gas.configured?'ok':'off');}
+  // PritOS lock toggle state
+  const enabled=localStorage.getItem(LOCK_EN_KEY)==='1';
+  const t=document.getElementById('pritos-lock-toggle');
+  if(t)t.checked=enabled;
+  document.getElementById('pritos-pin-section').style.display=enabled?'block':'none';
+}
+async function saveGemKey(){
+  const val=document.getElementById('gem-key-in').value.trim();
+  if(!val)return toast('Paste a Gemini API key first');
+  const msg=document.getElementById('gem-set-msg');
+  msg.textContent='Saving…';msg.style.color='var(--mn)';
+  const d=await gw({action:'gemini.setKey',apiKey:val});
+  if(d.ok){msg.textContent='Saved to CF Worker ✓ — works on all devices';msg.style.color='var(--grn)';document.getElementById('gem-key-in').value='';}
+  else{msg.textContent='Save failed — check CF Worker';msg.style.color='var(--red)';}
+}
+async function saveGasUrl(){
+  const val=document.getElementById('gas-url-in').value.trim();
+  if(!val)return toast('Paste a GAS URL first');
+  const d=await gw({action:'kv.set',kvKey:'_gas_url',kvVal:val}).catch(()=>({ok:false}));
+  if(d&&d.ok)toast('GAS URL saved ✓');
+  else{
+    // Try context.set as fallback
+    await gw({action:'context.set',name:'_gas_url_manual',context:val});
+    toast('GAS URL saved (manual) — restart GAS URL fetch');
+  }
+  loadSettings();
 }
 
 // ── TABS ─────────────────────────────────────────────
@@ -533,6 +846,7 @@ function showTab(name){
   if(name==='home')loadHome();
   if(name==='projects')loadProjectNotes();
   if(name==='infra')checkInfra();
+  if(name==='settings')loadSettings();
 }
 
 // ── PROJECT EXPAND ────────────────────────────────────
@@ -557,17 +871,11 @@ async function saveNote(proj){
   if(d.ok&&btn){const o=btn.textContent;btn.textContent='Saved ✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent=o;btn.classList.remove('saved')},2000);}
   else toast('Save failed');
 }
-
-async function loadProjectNotes(){
-  const projs=['drivecore','brainos','bizops','cfgateway'];
-  projs.forEach(p=>{loadNote(p);});
-  // Store tab note
-  loadNote('store');
-}
+async function loadProjectNotes(){['drivecore','brainos','bizops','cfgateway'].forEach(p=>loadNote(p));loadNote('store');}
 
 // ── SESSION PROMPTS ───────────────────────────────────
 const PROMPTS={
-  drivecore:'DriveCore session — Prit prit946@gmail.com\nCF Worker: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026\nGAS: 1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf (v54+)\nTool: https://prit946.github.io/ops-hub/drivecore.html\nGemini key in CF KV _gemini_key, GAS URL in CF KV _gas_url\nActions: dc.manifest → dc.taxonomy → dc.execute → dc.dedupe → dc.getReview → dc.decide\nLearned rules in GAS Script Properties DC_LEARNED_RULES\nDrive folders: 01_Business / UPS Store 8181 (Joelton) / ..., 03_Personal (Prit), 04_Family / Pravin',
+  drivecore:'DriveCore session — Prit prit946@gmail.com\nCF Worker: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026\nGAS: 1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf (v56)\nTool: https://prit946.github.io/ops-hub/drivecore.html\nGemini key in CF KV _gemini_key, GAS URL in CF KV _gas_url\nActions: dc.manifest → dc.taxonomy → dc.execute → dc.dedupe → dc.getReview → dc.decide\nLearned rules in GAS Script Properties DC_LEARNED_RULES\nDrive folders: 01_Business / UPS Store 8181 (Joelton) / ..., 03_Personal (Prit), 04_Family / Pravin',
   brainos:'BrainOS session — ADHD productivity app\nURL: https://brain-os-phbz.onrender.com\nGitHub: github.com/prit946/brain-os\nNeeds: cloud deploy, persistent storage',
   bizops:'Business Ops session — dashboard project (WIP, needs scope definition)\nURL: https://prit946.github.io/prit-business-op/\nGitHub: github.com/prit946/prit-business-op\nStatus: unfinished — define features before building',
   cfgateway:'CF Worker session\nWorker: spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026\nGitHub: github.com/prit946/claude-gateway-worker\nLocal: ~/Projects/Claude/gateway-worker/worker.js\nDeploy: push to master → GitHub Actions → wrangler deploy'
@@ -579,61 +887,110 @@ function copyPrompt(proj){
   navigator.clipboard.writeText(full).then(()=>toast('Session prompt copied!'));
 }
 
+// ── QUICK CAPTURE ─────────────────────────────────────
+async function saveCapture(){
+  const val=document.getElementById('capture-text').value.trim();
+  if(!val)return toast('Nothing to capture');
+  const existing=await gw({action:'context.get',name:'captures'});
+  const entries=(existing.context?existing.context.split('\n---\n'):[]).filter(Boolean);
+  const ts=new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  entries.unshift('['+ts+'] '+val);
+  const saved=entries.slice(0,20).join('\n---\n');
+  const d=await gw({action:'context.set',name:'captures',context:saved});
+  if(d.ok){document.getElementById('capture-text').value='';toast('Captured ✓');loadCaptures();}
+  else toast('Save failed');
+}
+async function loadCaptures(){
+  const d=await gw({action:'context.get',name:'captures'});
+  if(!d.context){document.getElementById('capture-saved').style.display='none';return;}
+  const entries=d.context.split('\n---\n').filter(Boolean).slice(0,5);
+  document.getElementById('capture-list').innerHTML=entries.map(e=>`<div style="padding:3px 0;font-size:11px;color:var(--mx);border-bottom:1px solid var(--bd)">${e}</div>`).join('');
+  document.getElementById('capture-saved').style.display='block';
+}
+
 // ── HOME ─────────────────────────────────────────────
 async function loadHome(){
   document.getElementById('home-time').textContent=new Date().toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
-
+  loadCaptures();
+  // Weather (Joelton TN: 36.33°N, -86.81°W) — Open-Meteo, no API key
+  fetch('https://api.open-meteo.com/v1/forecast?latitude=36.33&longitude=-86.81&current_weather=true&temperature_unit=fahrenheit&timezone=America%2FChicago')
+    .then(r=>r.json()).then(d=>{
+      if(d.current_weather){
+        const t=Math.round(d.current_weather.temperature);
+        const wmo=d.current_weather.weathercode;
+        const cond=wmoDesc(wmo);
+        document.getElementById('home-weather').textContent='Joelton TN · '+t+'°F · '+cond;
+      }
+    }).catch(()=>{});
   // Ping CF Worker
-  const gw=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'health'})}).then(r=>({ok:r.ok,status:r.status})).catch(()=>({ok:false}));
-  const gwOk=gw.ok;
-  document.getElementById('hp-gw').textContent=gwOk?'✓ Live':'✗ Down';
-  document.getElementById('hp-gw').style.color=gwOk?'var(--grn)':'var(--red)';
-  document.getElementById('h-gw').className='hdr-dot '+(gwOk?'ok':'err');
-
-  if(gwOk){
-    // Check GAS
-    const gas=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'gas.proxy',gasAction:'dc.ping'})}).then(r=>r.json()).catch(()=>({ok:false}));
+  const gwRes=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'health'})}).then(r=>({ok:r.ok})).catch(()=>({ok:false}));
+  document.getElementById('hp-gw').textContent=gwRes.ok?'✓ Live':'✗ Down';
+  document.getElementById('hp-gw').style.color=gwRes.ok?'var(--grn)':'var(--red)';
+  document.getElementById('h-gw').className='hdr-dot '+(gwRes.ok?'ok':'err');
+  if(gwRes.ok){
+    const [gas,gem,ctx]=await Promise.all([
+      gw({action:'gas.proxy',gasAction:'dc.ping'}),
+      gw({action:'gemini.check'}),
+      gw({action:'context.list'})
+    ]);
     document.getElementById('hp-gas').textContent=gas.ok?'✓ Live':'✗ Down';
     document.getElementById('hp-gas').style.color=gas.ok?'var(--grn)':'var(--red)';
     document.getElementById('h-gas').className='hdr-dot '+(gas.ok?'ok':'err');
-
-    // Check Gemini key
-    const gem=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'gemini.check'})}).then(r=>r.json()).catch(()=>({ok:false}));
     document.getElementById('hp-gem').textContent=gem.configured?'Set ✓':'Not set';
     document.getElementById('hp-gem').style.color=gem.configured?'var(--grn)':'var(--amb)';
-
-    // Context count
-    const ctx=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'context.list'})}).then(r=>r.json()).catch(()=>({ok:false}));
+    document.getElementById('hp-dc').textContent='✓ Ready';
+    document.getElementById('hp-dc').style.color='var(--grn)';
     if(ctx.projects){
       document.getElementById('ctx-count').textContent=ctx.projects.length+' projects';
       document.getElementById('ctx-list').innerHTML=ctx.projects.slice(0,5).map(p=>`<div style="padding:3px 0;color:var(--mx);font-size:11px">· ${p.name}${p.updated?' <span style="color:var(--mn)">('+p.updated.slice(0,10)+')</span>':''}</div>`).join('');
     }
-
-    document.getElementById('hp-dc').textContent='✓ Ready';
-    document.getElementById('hp-dc').style.color='var(--grn)';
   } else {
     ['hp-gas','hp-gem','hp-dc'].forEach(id=>{document.getElementById(id).textContent='—';});
   }
 }
 
+// WMO weather code → description
+function wmoDesc(c){
+  if(c===0)return 'Clear';if(c<=2)return 'Partly cloudy';if(c===3)return 'Overcast';
+  if(c<=49)return 'Fog';if(c<=59)return 'Drizzle';if(c<=69)return 'Rain';
+  if(c<=79)return 'Snow';if(c<=82)return 'Showers';if(c<=99)return 'Thunderstorms';
+  return '';
+}
+
 // ── INFRA CHECK ───────────────────────────────────────
 async function checkInfra(){
   badge('inf-gw','soon','Checking…');badge('inf-gas','soon','Checking…');badge('inf-gem','soon','Checking…');badge('inf-pages','soon','Checking…');
-  const [gw,gas,gem]=await Promise.all([
+  const [gwR,gas,gem]=await Promise.all([
     fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'health'})}).then(r=>({ok:r.ok})).catch(()=>({ok:false})),
-    fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'gas.proxy',gasAction:'dc.ping'})}).then(r=>r.json()).catch(()=>({ok:false})),
-    fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'gemini.check'})}).then(r=>r.json()).catch(()=>({ok:false}))
+    gw({action:'gas.proxy',gasAction:'dc.ping'}),
+    gw({action:'gemini.check'})
   ]);
-  badge('inf-gw',gw.ok?'live':'wip',gw.ok?'Live':'Down');
-  badge('inf-gas',gas.ok?'live':'wip',gas.ok?'Live v54':'Down');
+  badge('inf-gw',gwR.ok?'live':'wip',gwR.ok?'Live':'Down');
+  badge('inf-gas',gas.ok?'live':'wip',gas.ok?'Live v56':'Down');
   badge('inf-gem',gem.configured?'live':'wip',gem.configured?'Set':'Missing');
   fetch('https://prit946.github.io/ops-hub/',{mode:'no-cors'}).then(()=>badge('inf-pages','live','Live')).catch(()=>badge('inf-pages','wip','Down'));
 }
 
-// ── TOOLS PINGS ──────────────────────────────────────
-async function pingGW(){sdot('tools-dot','','amb','Pinging CF Worker…');const d=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'health'})}).then(r=>({ok:r.ok,status:r.status})).catch(()=>({ok:false}));sdot('tools-dot','','',d.ok?'CF Worker ✓ live':'CF Worker ✗ unreachable');document.getElementById('tools-dot').className='sdot-c '+(d.ok?'grn':'red');}
+// ── TOOLS ─────────────────────────────────────────────
+async function pingGW(){sdot('tools-dot','','amb','Pinging CF Worker…');const d=await fetch(CF,{method:'POST',headers:{'Content-Type':'application/json','User-Agent':'curl/8.0'},body:JSON.stringify({key:KEY,action:'health'})}).then(r=>({ok:r.ok})).catch(()=>({ok:false}));document.getElementById('tools-dot').className='sdot-c '+(d.ok?'grn':'red');document.getElementById('tools-txt').textContent=d.ok?'CF Worker ✓ live':'CF Worker ✗ unreachable';}
 async function pingGAS(){sdot('tools-dot','','amb','Pinging GAS…');const d=await gw({action:'gas.proxy',gasAction:'dc.ping'});document.getElementById('tools-dot').className='sdot-c '+(d.ok?'grn':'red');document.getElementById('tools-txt').textContent=d.ok?'GAS ✓ live ('+d.service+')':'GAS ✗ unreachable';}
-async function checkGemini(){sdot('tools-dot','','amb','Checking Gemini key…');const d=await gw({action:'gemini.check'});document.getElementById('tools-dot').className='sdot-c '+(d.configured?'grn':'amb');document.getElementById('tools-txt').textContent=d.configured?'Gemini key set ✓ ('+d.prefix+')':'Gemini key not set — open DriveCore → Settings to add it';}
+async function checkGemini(){sdot('tools-dot','','amb','Checking Gemini key…');const d=await gw({action:'gemini.check'});document.getElementById('tools-dot').className='sdot-c '+(d.configured?'grn':'amb');document.getElementById('tools-txt').textContent=d.configured?'Gemini key set ✓ ('+d.prefix+')':'Gemini key not set — open Settings to add it';}
+
+// ── QR CODE ──────────────────────────────────────────
+function genQR(){
+  const val=document.getElementById('qr-input').value.trim();
+  if(!val)return toast('Enter text or URL first');
+  const enc=encodeURIComponent(val);
+  const src='https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=10&data='+enc;
+  document.getElementById('qr-img').src=src;
+  document.getElementById('qr-val-lbl').textContent=val.length>60?val.slice(0,60)+'…':val;
+  document.getElementById('qr-out').style.display='flex';
+}
+function dlQR(){
+  const img=document.getElementById('qr-img');
+  if(!img.src)return toast('Generate a QR code first');
+  const a=document.createElement('a');a.href=img.src;a.download='qrcode.png';a.target='_blank';a.click();
+}
 
 // ── NAS PLAN ─────────────────────────────────────────
 async function loadNasMd(){const d=await gw({action:'context.get',name:'drivecore-nas'});const el=document.getElementById('nas-md');if(d.context){el.textContent=d.context;el.style.display='';}else{el.textContent='NAS plan not saved yet.';el.style.display='';}}
@@ -648,7 +1005,6 @@ function addLink(){
   item.innerHTML=`<span class="link-icon">🔗</span><div class="link-info"><div class="link-name">${name}</div><div class="link-url">${url}</div></div><a class="link-go" href="${url}" target="_blank">›</a>`;
   list.appendChild(item);
   document.getElementById('link-name-in').value='';document.getElementById('link-url-in').value='';
-  // Persist links to KV
   const links=JSON.parse(localStorage.getItem('pritos-links')||'[]');
   links.push({name,url});localStorage.setItem('pritos-links',JSON.stringify(links));
   toast('Link added');
@@ -673,11 +1029,15 @@ async function createProject(){
   else toast('Failed to create project');
 }
 
-// ── STORE NOTES ──────────────────────────────────────
+// ── PWA SERVICE WORKER ────────────────────────────────
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// ── INIT ─────────────────────────────────────────────
 document.getElementById('save-store-note').addEventListener('click',()=>saveNote('store'));
 loadNote('store');
-
-// Init
+initPritosLock();
 loadHome();
 </script>
 </body>
