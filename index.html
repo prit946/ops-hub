@@ -274,6 +274,17 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
     <div class="health-pill"><div class="h-val" id="hp-dc" style="color:var(--mn)">—</div><div class="h-lbl">DriveCore</div></div>
   </div>
 
+  <!-- ── SETUP CHECKLIST (loads from KV key: setup-checklist) ── -->
+  <div id="setup-card" style="display:none">
+    <div class="s-hd" style="margin-top:16px">
+      Setup Checklist
+      <span id="setup-badge" class="badge" style="background:var(--red);color:#fff;font-size:10px;padding:2px 7px;margin-left:4px;border-radius:20px">0</span>
+    </div>
+    <div class="card" style="border-color:var(--red)">
+      <div class="card-body" id="setup-list">Loading…</div>
+    </div>
+  </div>
+
   <div class="s-hd">Quick Launch</div>
   <a class="qa-btn" href="drivecore.html">
     <div class="qa-btn-l"><div class="qa-btn-icon">☁</div><div><div class="qa-btn-name">DriveCore</div><div class="qa-btn-desc">Auto-organize Google Drive · PIN protected</div></div></div>
@@ -494,6 +505,19 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
     <div class="qa-btn-l"><div class="qa-btn-icon">📋</div><div><div class="qa-btn-name">Context Hub</div><div class="qa-btn-desc">Save · load · manage all project contexts in KV</div></div></div>
     <span class="qa-btn-arr">›</span>
   </a>
+
+  <div class="s-hd">Setup Commands</div>
+  <div class="card acc" style="border-color:var(--red)">
+    <div class="card-body">
+      <div class="card-desc" style="margin-bottom:10px;color:var(--mn);font-size:11px">One-time setup commands — copy to terminal. Never type secrets; use <code style="background:var(--sh);padding:1px 4px;border-radius:3px">pbpaste</code> flow.</div>
+      <div class="row" style="border:none;padding:5px 0"><span class="row-lbl" style="width:auto;min-width:100px;font-size:11px">Gemini key</span><button class="cp" onclick="cp(this,'pb-set-kv _gemini_key && pb-set-secret GEMINI_API_KEY')">⧉</button><span class="row-val mono" style="font-size:9px;flex:1;word-break:break-all">pb-set-kv _gemini_key && pb-set-secret GEMINI_API_KEY</span></div>
+      <div class="row" style="border:none;padding:5px 0"><span class="row-lbl" style="width:auto;min-width:100px;font-size:11px">Notion token</span><button class="cp" onclick="cp(this,'pb-set-secret NOTION_TOKEN')">⧉</button><span class="row-val mono" style="font-size:9px;flex:1">pb-set-secret NOTION_TOKEN</span></div>
+      <div class="row" style="border:none;padding:5px 0"><span class="row-lbl" style="width:auto;min-width:100px;font-size:11px">Any CF secret</span><button class="cp" onclick="cp(this,'pb-set-secret SECRET_NAME')">⧉</button><span class="row-val mono" style="font-size:9px;flex:1">pb-set-secret SECRET_NAME</span></div>
+      <div class="row" style="border:none;padding:5px 0"><span class="row-lbl" style="width:auto;min-width:100px;font-size:11px">Any KV value</span><button class="cp" onclick="cp(this,'pb-set-kv kv_key_name')">⧉</button><span class="row-val mono" style="font-size:9px;flex:1">pb-set-kv kv_key_name</span></div>
+      <div class="row" style="border:none;padding:5px 0"><span class="row-lbl" style="width:auto;min-width:100px;font-size:11px">Browser login</span><button class="cp" onclick="cp(this,'prit-browser login')">⧉</button><span class="row-val mono" style="font-size:9px;flex:1">prit-browser login</span></div>
+      <div class="row" style="border:none;padding:5px 0"><span class="row-lbl" style="width:auto;min-width:100px;font-size:11px">Browser scrape</span><button class="cp" onclick="cp(this,'prit-browser get https://example.com')">⧉</button><span class="row-val mono" style="font-size:9px;flex:1">prit-browser get URL</span></div>
+    </div>
+  </div>
 
   <div class="s-hd">KV Quick Actions</div>
   <div class="card acc">
@@ -1034,11 +1058,56 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 
+// ── SETUP CHECKLIST ──────────────────────────────────
+async function loadSetupChecklist(){
+  const doneKey='pritos-setup-done';
+  const done=JSON.parse(localStorage.getItem(doneKey)||'[]');
+  let items=[];
+  try{
+    const d=await gw({action:'context.get',name:'setup-checklist'});
+    if(d.context) items=JSON.parse(d.context);
+  }catch(e){return;}
+  if(!items.length)return;
+  const pending=items.filter(i=>!done.includes(i.id));
+  const card=document.getElementById('setup-card');
+  const list=document.getElementById('setup-list');
+  const badge=document.getElementById('setup-badge');
+  if(!pending.length){card.style.display='none';return;}
+  badge.textContent=pending.length;
+  card.style.display='';
+  list.innerHTML=pending.map(i=>`
+    <div id="si-${i.id}" style="padding:10px 0;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--mx)">${i.title}</div>
+          <div style="font-size:11px;color:var(--mn);margin-top:2px">${i.desc}</div>
+          ${i.cmd?`<div style="font-family:monospace;font-size:10px;color:var(--mx);background:var(--sh);border-radius:4px;padding:4px 7px;margin-top:6px;word-break:break-all">${i.cmd}</div>`:''}
+        </div>
+        <button onclick="markSetupDone('${i.id}')" style="flex-shrink:0;background:none;border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:10px;cursor:pointer;color:var(--mn)">Done</button>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        ${i.cmd?`<button class="btn btn-s btn-sm" onclick="cp(this,${JSON.stringify(i.cmd)})">⧉ Copy cmd</button>`:''}
+        ${i.link?`<a class="btn btn-s btn-sm" href="${i.link}" target="_blank" style="text-decoration:none">Open →</a>`:''}
+      </div>
+    </div>`).join('');
+  // remove last border
+  const rows=list.querySelectorAll('[id^="si-"]');
+  if(rows.length) rows[rows.length-1].style.borderBottom='none';
+}
+function markSetupDone(id){
+  const doneKey='pritos-setup-done';
+  const done=JSON.parse(localStorage.getItem(doneKey)||'[]');
+  if(!done.includes(id)){done.push(id);localStorage.setItem(doneKey,JSON.stringify(done));}
+  loadSetupChecklist();
+  toast('Marked done ✓');
+}
+
 // ── INIT ─────────────────────────────────────────────
 document.getElementById('save-store-note').addEventListener('click',()=>saveNote('store'));
 loadNote('store');
 initPritosLock();
 loadHome();
+loadSetupChecklist();
 </script>
 </body>
 </html>
