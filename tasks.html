@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasks — PritOS</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+:root {
+  --bg:#0f1117;--s1:#161b27;--s2:#1e2535;--bd:#2a3247;
+  --tx:#e8eaf0;--mn:#8892a4;--mx:#b0bac8;
+  --acc:#8b5cf6;--acc2:#7c3aed;--live:#22d37a;
+  --err:#ef4444;--warn:#f59e0b;--done:#6b7280;
+  --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+:root[data-theme="light"] {
+  --bg:#f8f9fc;--s1:#fff;--s2:#f0f2f7;--bd:#dde1eb;
+  --tx:#0f1117;--mn:#6b7280;--mx:#374151;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Header */
+.hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--s1);border-bottom:1px solid var(--bd);flex-shrink:0}
+.back-btn{background:none;border:none;color:var(--mn);font-size:18px;cursor:pointer;padding:2px 6px;border-radius:4px}
+.back-btn:hover{color:var(--tx)}
+.hdr-title{font-size:16px;font-weight:700;flex:1}
+.hdr-status{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--s2);border:1px solid var(--bd);color:var(--mn);display:flex;align-items:center;gap:4px}
+.hdr-status.connected{border-color:var(--live);color:var(--live)}
+.hdr-status.connected::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--live)}
+.icon-btn{background:none;border:1px solid var(--bd);border-radius:6px;padding:5px 9px;color:var(--mn);cursor:pointer;font-size:13px;line-height:1}
+.icon-btn:hover{border-color:var(--acc);color:var(--acc)}
+
+/* List tabs */
+.list-tabs-wrap{background:var(--s1);border-bottom:1px solid var(--bd);padding:8px 12px;display:flex;gap:6px;overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.list-tabs-wrap::-webkit-scrollbar{display:none}
+.list-tab{white-space:nowrap;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:none;color:var(--mn);transition:.15s;flex-shrink:0}
+.list-tab.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.list-tab:hover:not(.active){border-color:var(--acc);color:var(--acc)}
+.list-tab.add-list{color:var(--acc);border-color:var(--acc)}
+
+/* Task list */
+.tasks-scroll{flex:1;overflow-y:auto;padding:8px 0;-webkit-overflow-scrolling:touch}
+.tasks-scroll::-webkit-scrollbar{width:3px}
+.tasks-scroll::-webkit-scrollbar-thumb{background:var(--bd)}
+
+.section-label{padding:4px 16px;font-size:10px;font-weight:700;color:var(--mn);letter-spacing:.6px;text-transform:uppercase;margin-top:4px}
+
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:10px 16px;border-bottom:1px solid var(--bd);transition:.1s;cursor:default}
+.task-item:last-child{border-bottom:none}
+.task-item:hover{background:var(--s2)}
+.task-item.completed{opacity:.45}
+.task-item.completing{opacity:.3;pointer-events:none}
+
+.task-check{width:18px;height:18px;border:2px solid var(--bd);border-radius:50%;flex-shrink:0;cursor:pointer;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.task-check:hover{border-color:var(--acc)}
+.task-check.checked{background:var(--live);border-color:var(--live)}
+.task-check.checked::after{content:'✓';font-size:10px;color:#fff;font-weight:700}
+
+.task-body{flex:1;min-width:0}
+.task-title{font-size:14px;line-height:1.4;word-break:break-word}
+.task-meta{font-size:11px;color:var(--mn);margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.task-due.overdue{color:var(--err)}
+.task-due.today{color:var(--warn)}
+.task-notes{font-size:11px;color:var(--mn);margin-top:3px;white-space:pre-wrap;word-break:break-word}
+
+.task-del{background:none;border:none;color:var(--mn);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:14px;opacity:0;transition:.15s;flex-shrink:0}
+.task-item:hover .task-del{opacity:1}
+.task-del:hover{color:var(--err)}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--mn);padding:32px}
+.empty-icon{font-size:40px;opacity:.4}
+.empty-msg{font-size:14px;text-align:center}
+
+/* Action bar */
+.action-bar{display:flex;gap:8px;padding:10px 12px;background:var(--s1);border-top:1px solid var(--bd);flex-shrink:0}
+.action-bar.adding{flex-direction:column;padding:12px}
+.ai-btn{flex:1;padding:10px;border:1px solid var(--acc);background:none;color:var(--acc);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.ai-btn:hover{background:var(--acc);color:#fff}
+.add-btn{flex:1;padding:10px;border:none;background:var(--acc);color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:.15s}
+.add-btn:hover{background:var(--acc2)}
+.task-input{width:100%;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:14px;font-family:inherit}
+.task-input:focus{outline:none;border-color:var(--acc)}
+.input-row{display:flex;gap:8px;margin-top:8px}
+.cancel-btn{padding:9px 16px;background:none;border:1px solid var(--bd);color:var(--mn);border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit}
+.save-btn{flex:1;padding:9px;background:var(--acc);border:none;color:#fff;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* AI Panel (bottom sheet) */
+.sheet-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:none}
+.sheet-overlay.open{display:block}
+.sheet{position:fixed;bottom:0;left:0;right:0;background:var(--s1);border-radius:16px 16px 0 0;z-index:101;max-height:80dvh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.sheet.open{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--bd);border-radius:2px;margin:10px auto 4px}
+.sheet-header{display:flex;align-items:center;padding:8px 16px 12px;gap:10px;border-bottom:1px solid var(--bd)}
+.sheet-title{font-size:15px;font-weight:700;flex:1}
+.sheet-close{background:none;border:none;color:var(--mn);font-size:20px;cursor:pointer;padding:2px 6px}
+.sheet-body{overflow-y:auto;padding:12px 14px;flex:1}
+.sheet-body::-webkit-scrollbar{display:none}
+
+/* AI prompt buttons */
+.prompts-section{margin-bottom:16px}
+.prompts-label{font-size:10px;font-weight:700;color:var(--mn);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px}
+.prompts-grid{display:flex;flex-wrap:wrap;gap:6px}
+.prompt-btn{padding:7px 12px;border:1px solid var(--bd);border-radius:20px;background:none;color:var(--mx);font-size:12px;cursor:pointer;font-family:inherit;transition:.15s;text-align:left}
+.prompt-btn:hover{border-color:var(--acc);color:var(--acc);background:rgba(139,92,246,.08)}
+.prompt-btn:active{background:rgba(139,92,246,.15)}
+
+.ai-free-row{display:flex;gap:8px;margin-top:4px}
+.ai-free-input{flex:1;padding:9px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:inherit}
+.ai-free-input:focus{outline:none;border-color:var(--acc)}
+.ai-send-btn{padding:9px 14px;background:var(--acc);border:none;color:#fff;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:600}
+
+/* AI response */
+.ai-response{margin-top:14px;padding:12px;background:var(--s2);border-radius:8px;border:1px solid var(--bd);font-size:13px;line-height:1.6;white-space:pre-wrap;display:none}
+.ai-response.visible{display:block}
+.ai-response.loading::after{content:'...';animation:dots 1s infinite}
+@keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
+
+/* Settings modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--s1);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:400px;padding:20px;display:flex;flex-direction:column;gap:14px}
+.modal h3{font-size:15px;font-weight:700}
+.modal-label{font-size:11px;color:var(--mn);margin-bottom:4px;font-weight:600}
+.modal input{width:100%;padding:8px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit}
+.modal input:focus{outline:none;border-color:var(--acc)}
+.modal-hint{font-size:11px;color:var(--mn);line-height:1.5}
+.modal-hint a{color:var(--acc)}
+.modal-actions{display:flex;gap:8px;margin-top:4px}
+.modal-save{flex:1;padding:9px;background:var(--acc);border:none;color:#fff;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+.modal-cancel{padding:9px 14px;background:none;border:1px solid var(--bd);color:var(--mn);border-radius:7px;font-size:13px;cursor:pointer;font-family:inherit}
+.danger-zone{border-top:1px solid var(--bd);padding-top:12px;margin-top:4px;display:flex;flex-direction:column;gap:8px}
+.danger-btn{width:100%;padding:9px;background:none;border:1px solid var(--err);color:var(--err);border-radius:7px;font-size:13px;cursor:pointer;font-family:inherit;transition:.15s}
+.danger-btn:hover{background:var(--err);color:#fff}
+
+/* Auth screen */
+.auth-screen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:16px;text-align:center}
+.auth-icon{font-size:48px}
+.auth-title{font-size:18px;font-weight:700}
+.auth-sub{font-size:13px;color:var(--mn);line-height:1.6;max-width:280px}
+.auth-connect{padding:12px 28px;background:var(--acc);border:none;color:#fff;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.auth-connect:hover{background:var(--acc2)}
+.auth-setup{margin-top:8px;font-size:12px;color:var(--mn)}
+.auth-setup a{color:var(--acc);cursor:pointer;text-decoration:none}
+.spinner{width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* New list modal */
+.new-list-modal{display:none}
+.new-list-modal.open{display:flex}
+
+/* Loading state */
+.loading-row{padding:20px;text-align:center;color:var(--mn);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <button class="back-btn" onclick="history.back()">&#8592;</button>
+  <span class="hdr-title">Tasks</span>
+  <span class="hdr-status" id="connStatus">Not connected</span>
+  <button class="icon-btn" onclick="refreshTasks()" title="Refresh">&#8635;</button>
+  <button class="icon-btn" onclick="openSettings()" title="Settings">&#9881;</button>
+</div>
+
+<div class="list-tabs-wrap" id="listTabs">
+  <div class="loading-row">Loading...</div>
+</div>
+
+<div class="tasks-scroll" id="taskList">
+  <div class="auth-screen" id="authScreen">
+    <div class="auth-icon">&#10003;</div>
+    <div class="auth-title">Tasks</div>
+    <div class="auth-sub">Connect your Google account to manage tasks directly from PritOS. No automations. You control it.</div>
+    <button class="auth-connect" onclick="connectGoogle()">Connect Google Tasks</button>
+    <div class="auth-setup">Need a Client ID? <a onclick="openSettings()">Set it up here</a></div>
+  </div>
+</div>
+
+<div class="action-bar" id="actionBar" style="display:none">
+  <button class="ai-btn" onclick="openAI()">&#10024; AI Assist</button>
+  <button class="add-btn" onclick="startAddTask()">+ Add Task</button>
+</div>
+
+<!-- AI Bottom Sheet -->
+<div class="sheet-overlay" id="sheetOverlay" onclick="closeAI()"></div>
+<div class="sheet" id="aiSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <span class="sheet-title">&#10024; AI Assist</span>
+    <button class="sheet-close" onclick="closeAI()">&#215;</button>
+  </div>
+  <div class="sheet-body">
+    <div class="prompts-section">
+      <div class="prompts-label">Quick Actions</div>
+      <div class="prompts-grid">
+        <button class="prompt-btn" onclick="runPrompt('prioritize')">&#128293; Prioritize my tasks</button>
+        <button class="prompt-btn" onclick="runPrompt('focus')">&#127919; What to focus on now?</button>
+        <button class="prompt-btn" onclick="runPrompt('overdue')">&#128680; What&#8217;s overdue?</button>
+        <button class="prompt-btn" onclick="runPrompt('skip')">&#128465; What can I skip?</button>
+        <button class="prompt-btn" onclick="runPrompt('group')">&#128193; Group similar tasks</button>
+        <button class="prompt-btn" onclick="runPrompt('workload')">&#128202; Summarize my workload</button>
+        <button class="prompt-btn" onclick="runPrompt('today')">&#9200; Today&#8217;s game plan</button>
+        <button class="prompt-btn" onclick="runPrompt('done')">&#9989; What did I accomplish?</button>
+      </div>
+    </div>
+    <div class="prompts-section">
+      <div class="prompts-label">Add Task from Note</div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <input class="ai-free-input" id="noteInput" placeholder="Paste a note, email snippet, or idea..." style="flex:1">
+        <button class="ai-send-btn" onclick="extractTasks()">Extract</button>
+      </div>
+    </div>
+    <div class="prompts-section">
+      <div class="prompts-label">Ask Anything</div>
+      <div class="ai-free-row">
+        <input class="ai-free-input" id="aiInput" placeholder="Ask AI about your tasks...">
+        <button class="ai-send-btn" onclick="sendAI()">Ask</button>
+      </div>
+    </div>
+    <div class="ai-response" id="aiResponse"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3>&#9881; Settings</h3>
+    <div>
+      <div class="modal-label">Google OAuth Client ID</div>
+      <input id="clientIdInput" type="text" placeholder="xxxxxxxxx.apps.googleusercontent.com">
+      <div class="modal-hint" style="margin-top:6px">
+        Create a free OAuth client at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">console.cloud.google.com</a>.<br>
+        Type: <strong>Web application</strong>.<br>
+        Add <strong>https://prit946.github.io</strong> as an authorized JavaScript origin.<br>
+        Scopes needed: <code>tasks</code>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeSettings()">Cancel</button>
+      <button class="modal-save" onclick="saveSettings()">Save</button>
+    </div>
+    <div class="danger-zone">
+      <button class="danger-btn" onclick="disconnectGoogle()">&#128274; Disconnect Google</button>
+      <button class="danger-btn" onclick="nukeAllTasks()">&#128165; Nuke All Tasks</button>
+    </div>
+  </div>
+</div>
+
+<!-- New List Modal -->
+<div class="modal-overlay new-list-modal" id="newListModal">
+  <div class="modal">
+    <h3>New Task List</h3>
+    <div>
+      <div class="modal-label">List Name</div>
+      <input id="newListInput" type="text" placeholder="e.g. Work, Personal, Store 8181...">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeNewList()">Cancel</button>
+      <button class="modal-save" onclick="createList()">Create</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CF = 'https://spring-sea-ac0a.prit946.workers.dev';
+const CF_KEY = 'Store8181Prit2026';
+const TASKS_BASE = 'https://tasks.googleapis.com/tasks/v1';
+const STORAGE_KEY = 'pritos_tasks_client_id';
+
+let accessToken = null;
+let tokenExpiry = 0;
+let tokenClient = null;
+let currentListId = '@default';
+let currentListTitle = 'My Tasks';
+let taskLists = [];
+let tasks = [];
+let addingTask = false;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) document.getElementById('clientIdInput').value = saved;
+  const token = sessionStorage.getItem('pritos_tasks_token');
+  const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
+  if (token && Date.now() < exp) {
+    accessToken = token;
+    tokenExpiry = exp;
+    onConnected();
+  }
+  // Wait for GIS to load
+  window.onGISLoaded = initGIS;
+  if (window.google?.accounts) initGIS();
+});
+
+function initGIS() {
+  const clientId = getClientId();
+  if (!clientId) return;
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: clientId,
+    scope: 'https://www.googleapis.com/auth/tasks',
+    callback: (resp) => {
+      if (resp.error) { showErr('Auth error: ' + resp.error); return; }
+      accessToken = resp.access_token;
+      tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      sessionStorage.setItem('pritos_tasks_token', accessToken);
+      sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
+      onConnected();
+    }
+  });
+  // Auto-connect if we have a client ID and no active token
+  if (!accessToken) {
+    const authScreen = document.getElementById('authScreen');
+    authScreen.style.display = '';
+  }
+}
+
+// GIS calls this when library loads
+window.onload_gsi = () => { if (!tokenClient) initGIS(); };
+
+function getClientId() {
+  return localStorage.getItem(STORAGE_KEY) || '';
+}
+
+function connectGoogle() {
+  const clientId = getClientId();
+  if (!clientId) { openSettings(); return; }
+  if (!tokenClient) { showErr('GIS not loaded yet. Refresh the page.'); return; }
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+async function ensureToken() {
+  if (accessToken && Date.now() < tokenExpiry) return true;
+  if (!tokenClient) return false;
+  return new Promise((resolve) => {
+    tokenClient.callback = (resp) => {
+      if (resp.error) { resolve(false); return; }
+      accessToken = resp.access_token;
+      tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      sessionStorage.setItem('pritos_tasks_token', accessToken);
+      sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
+      resolve(true);
+    };
+    tokenClient.requestAccessToken({ prompt: '' });
+  });
+}
+
+function onConnected() {
+  document.getElementById('connStatus').textContent = 'Connected';
+  document.getElementById('connStatus').className = 'hdr-status connected';
+  document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  document.getElementById('actionBar').style.display = 'flex';
+  loadLists();
+}
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+
+async function api(method, path, body) {
+  if (!await ensureToken()) throw new Error('Not authenticated');
+  const opts = {
+    method,
+    headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(TASKS_BASE + path, opts);
+  if (!r.ok) {
+    const e = await r.json().catch(() => ({}));
+    throw new Error(e.error?.message || r.statusText);
+  }
+  if (r.status === 204) return {};
+  return r.json();
+}
+
+// ─── Lists ────────────────────────────────────────────────────────────────────
+
+async function loadLists() {
+  try {
+    const data = await api('GET', '/users/@me/lists?maxResults=100');
+    taskLists = data.items || [];
+    renderListTabs();
+    await loadTasks();
+  } catch(e) { showErr(e.message); }
+}
+
+function renderListTabs() {
+  const tabs = document.getElementById('listTabs');
+  tabs.innerHTML = '';
+  taskLists.forEach(list => {
+    const t = document.createElement('button');
+    t.className = 'list-tab' + (list.id === currentListId || (currentListId === '@default' && list.title === 'My Tasks') ? ' active' : '');
+    t.textContent = list.title;
+    t.onclick = () => switchList(list.id, list.title);
+    tabs.appendChild(t);
+  });
+  const add = document.createElement('button');
+  add.className = 'list-tab add-list';
+  add.textContent = '+ New List';
+  add.onclick = openNewList;
+  tabs.appendChild(add);
+}
+
+function switchList(id, title) {
+  currentListId = id;
+  currentListTitle = title;
+  renderListTabs();
+  loadTasks();
+}
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
+
+async function loadTasks() {
+  document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+  try {
+    const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+    const data = await api('GET', `/lists/${listId}/tasks?showCompleted=true&maxResults=100`);
+    tasks = data.items || [];
+    renderTasks();
+  } catch(e) { showErr(e.message); }
+}
+
+function renderTasks() {
+  const el = document.getElementById('taskList');
+  if (!tasks.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9989;</div><div class="empty-msg">No tasks. You're clear.<br><span style="font-size:12px">Tap + Add Task to get started.</span></div></div>`;
+    return;
+  }
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+
+  const overdue=[], dueToday=[], upcoming=[], noDate=[], done=[];
+  tasks.forEach(t => {
+    if (t.status === 'completed') { done.push(t); return; }
+    if (!t.due) { noDate.push(t); return; }
+    const d = new Date(t.due);
+    if (d < today) overdue.push(t);
+    else if (d < tomorrow) dueToday.push(t);
+    else upcoming.push(t);
+  });
+
+  let html = '';
+  if (overdue.length) {
+    html += `<div class="section-label" style="color:var(--err)">Overdue (${overdue.length})</div>`;
+    overdue.forEach(t => html += taskHTML(t));
+  }
+  if (dueToday.length) {
+    html += `<div class="section-label" style="color:var(--warn)">Today</div>`;
+    dueToday.forEach(t => html += taskHTML(t));
+  }
+  if (upcoming.length) {
+    html += `<div class="section-label">Upcoming</div>`;
+    upcoming.forEach(t => html += taskHTML(t));
+  }
+  if (noDate.length) {
+    html += `<div class="section-label">No Date</div>`;
+    noDate.forEach(t => html += taskHTML(t));
+  }
+  if (done.length) {
+    html += `<div class="section-label">Completed (${done.length})</div>`;
+    done.forEach(t => html += taskHTML(t));
+  }
+  el.innerHTML = html;
+}
+
+function taskHTML(t) {
+  const done = t.status === 'completed';
+  const due = t.due ? fmtDue(t.due) : '';
+  const dueClass = due.overdue ? 'task-due overdue' : due.today ? 'task-due today' : 'task-due';
+  const checkClass = done ? 'task-check checked' : 'task-check';
+  const itemClass = done ? 'task-item completed' : 'task-item';
+  const escapedTitle = escHtml(t.title || '(no title)');
+  const escapedNotes = t.notes ? `<div class="task-notes">${escHtml(t.notes)}</div>` : '';
+  const dueLbl = due.label ? `<span class="${dueClass}">${due.label}</span>` : '';
+  return `<div class="${itemClass}" id="task-${t.id}">
+    <div class="${checkClass}" onclick="toggleTask('${t.id}','${done?'needsAction':'completed'}')"></div>
+    <div class="task-body">
+      <div class="task-title">${escapedTitle}</div>
+      ${dueLbl || escapedNotes ? `<div class="task-meta">${dueLbl}</div>${escapedNotes}` : ''}
+    </div>
+    <button class="task-del" onclick="deleteTask('${t.id}')" title="Delete">&#215;</button>
+  </div>`;
+}
+
+function fmtDue(isoDate) {
+  const d = new Date(isoDate);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
+  if (d < today) return { label: 'Overdue', overdue: true };
+  if (d < tomorrow) return { label: 'Today', today: true };
+  const opts = { month:'short', day:'numeric' };
+  if (d.getFullYear() !== today.getFullYear()) opts.year = 'numeric';
+  return { label: d.toLocaleDateString('en-US', opts) };
+}
+
+async function toggleTask(taskId, newStatus) {
+  const el = document.getElementById('task-' + taskId);
+  el?.classList.add('completing');
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  try {
+    await api('PATCH', `/lists/${listId}/tasks/${taskId}`, { status: newStatus });
+    const t = tasks.find(t => t.id === taskId);
+    if (t) t.status = newStatus;
+    setTimeout(renderTasks, 400);
+  } catch(e) { el?.classList.remove('completing'); showErr(e.message); }
+}
+
+async function deleteTask(taskId) {
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const el = document.getElementById('task-' + taskId);
+  el?.classList.add('completing');
+  try {
+    await api('DELETE', `/lists/${listId}/tasks/${taskId}`);
+    tasks = tasks.filter(t => t.id !== taskId);
+    setTimeout(renderTasks, 300);
+  } catch(e) { el?.classList.remove('completing'); showErr(e.message); }
+}
+
+async function refreshTasks() { await loadLists(); }
+
+// ─── Add Task ─────────────────────────────────────────────────────────────────
+
+function startAddTask() {
+  const bar = document.getElementById('actionBar');
+  bar.innerHTML = `
+    <input class="task-input" id="newTaskInput" placeholder="New task..." autofocus>
+    <div class="input-row">
+      <button class="cancel-btn" onclick="cancelAdd()">Cancel</button>
+      <button class="save-btn" onclick="saveTask()">Add</button>
+    </div>`;
+  bar.classList.add('adding');
+  document.getElementById('newTaskInput')?.focus();
+  document.getElementById('newTaskInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') saveTask();
+    if (e.key === 'Escape') cancelAdd();
+  });
+}
+
+function cancelAdd() {
+  const bar = document.getElementById('actionBar');
+  bar.classList.remove('adding');
+  bar.innerHTML = `<button class="ai-btn" onclick="openAI()">&#10024; AI Assist</button><button class="add-btn" onclick="startAddTask()">+ Add Task</button>`;
+}
+
+async function saveTask() {
+  const title = document.getElementById('newTaskInput')?.value?.trim();
+  if (!title) return;
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  try {
+    const t = await api('POST', `/lists/${listId}/tasks`, { title });
+    tasks.unshift(t);
+    cancelAdd();
+    renderTasks();
+  } catch(e) { showErr(e.message); }
+}
+
+// ─── New List ─────────────────────────────────────────────────────────────────
+
+function openNewList() {
+  document.getElementById('newListModal').classList.add('open');
+  document.getElementById('newListInput').value = '';
+  setTimeout(() => document.getElementById('newListInput').focus(), 100);
+}
+
+function closeNewList() {
+  document.getElementById('newListModal').classList.remove('open');
+}
+
+async function createList() {
+  const title = document.getElementById('newListInput').value.trim();
+  if (!title) return;
+  try {
+    const list = await api('POST', '/users/@me/lists', { title });
+    taskLists.push(list);
+    closeNewList();
+    switchList(list.id, list.title);
+  } catch(e) { showErr(e.message); }
+}
+
+// ─── AI Panel ─────────────────────────────────────────────────────────────────
+
+function openAI() {
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('aiSheet').classList.add('open');
+  document.getElementById('aiResponse').className = 'ai-response';
+  document.getElementById('aiResponse').textContent = '';
+}
+
+function closeAI() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('aiSheet').classList.remove('open');
+}
+
+const PROMPT_TEMPLATES = {
+  prioritize: 'Here are my current tasks. Prioritize them by importance and urgency. Be direct and short.',
+  focus: 'Given these tasks, what ONE thing should I focus on RIGHT NOW and why?',
+  overdue: 'Which of these tasks are overdue or at risk? Flag them and suggest what to do.',
+  skip: 'Which tasks in this list could I skip or delegate without real consequences?',
+  group: 'Group these tasks by category or project. Keep it tight.',
+  workload: 'Summarize my total workload. How heavy is it? What\'s the shape of the work?',
+  today: 'Build a realistic game plan for what I can actually finish today.',
+  done: 'Based on the completed tasks, what did I get done? Give me a quick win summary.',
+};
+
+async function runPrompt(type) {
+  const template = PROMPT_TEMPLATES[type];
+  if (!template) return;
+  const taskSummary = buildTaskSummary();
+  const prompt = template + '\n\nMy tasks:\n' + taskSummary;
+  await callAI(prompt);
+}
+
+async function sendAI() {
+  const input = document.getElementById('aiInput');
+  const userPrompt = input.value.trim();
+  if (!userPrompt) return;
+  const taskSummary = buildTaskSummary();
+  const prompt = userPrompt + '\n\nContext — my current tasks:\n' + taskSummary;
+  input.value = '';
+  await callAI(prompt);
+}
+
+async function extractTasks() {
+  const noteInput = document.getElementById('noteInput');
+  const note = noteInput.value.trim();
+  if (!note) return;
+  const prompt = `Extract actionable tasks from this note. Return a numbered list of clear, specific tasks I should add to my task manager. Keep each task to one line.\n\nNote:\n${note}`;
+  await callAI(prompt, true);
+}
+
+function buildTaskSummary() {
+  if (!tasks.length) return '(no tasks)';
+  const today = new Date(); today.setHours(0,0,0,0);
+  return tasks.map(t => {
+    let line = `- [${t.status === 'completed' ? 'done' : 'todo'}] ${t.title}`;
+    if (t.due) {
+      const d = new Date(t.due);
+      line += d < today ? ' (OVERDUE)' : ` (due ${d.toLocaleDateString()})`;
+    }
+    return line;
+  }).join('\n');
+}
+
+async function callAI(prompt, isExtract = false) {
+  const resp = document.getElementById('aiResponse');
+  resp.className = 'ai-response visible loading';
+  resp.textContent = '';
+  try {
+    const r = await fetch(CF, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'gemini.ask',
+        key: CF_KEY,
+        prompt,
+        system: 'You are a direct, ADHD-friendly task management assistant. No fluff. Short sentences. Bullet points. Get to the point fast.'
+      })
+    });
+    const data = await r.json();
+    resp.classList.remove('loading');
+    if (data.error) { resp.textContent = 'Error: ' + data.error; return; }
+    resp.textContent = data.text || data.answer || JSON.stringify(data);
+  } catch(e) {
+    resp.classList.remove('loading');
+    resp.textContent = 'AI error: ' + e.message;
+  }
+}
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('open');
+  const saved = localStorage.getItem(STORAGE_KEY) || '';
+  document.getElementById('clientIdInput').value = saved;
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function saveSettings() {
+  const val = document.getElementById('clientIdInput').value.trim();
+  if (val) localStorage.setItem(STORAGE_KEY, val);
+  closeSettings();
+  location.reload();
+}
+
+function disconnectGoogle() {
+  if (!confirm('Disconnect Google? You\'ll need to reconnect.')) return;
+  accessToken = null;
+  tokenExpiry = 0;
+  sessionStorage.removeItem('pritos_tasks_token');
+  sessionStorage.removeItem('pritos_tasks_exp');
+  if (window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(accessToken, () => {});
+  closeSettings();
+  location.reload();
+}
+
+async function nukeAllTasks() {
+  if (!confirm('This will delete ALL task lists (except My Tasks) and empty My Tasks completely.\n\nThis cannot be undone. Proceed?')) return;
+  if (!confirm('Are you sure? ALL TASKS DELETED.')) return;
+  closeSettings();
+  document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div><br>Nuking all tasks...</div>';
+  try {
+    const lists = await api('GET', '/users/@me/lists?maxResults=100');
+    const allLists = lists.items || [];
+    for (const list of allLists) {
+      if (list.title !== 'My Tasks') {
+        await api('DELETE', '/users/@me/lists/' + list.id);
+      } else {
+        await api('POST', '/lists/' + list.id + '/clear');
+        let pageToken = null;
+        do {
+          let url = `/lists/${list.id}/tasks?maxResults=100&showCompleted=true&showHidden=true`;
+          if (pageToken) url += '&pageToken=' + pageToken;
+          const t = await api('GET', url);
+          for (const task of (t.items || [])) {
+            await api('DELETE', `/lists/${list.id}/tasks/${task.id}`);
+          }
+          pageToken = t.nextPageToken;
+        } while (pageToken);
+      }
+    }
+    taskLists = [];
+    tasks = [];
+    currentListId = '@default';
+    await loadLists();
+  } catch(e) { showErr(e.message); loadTasks(); }
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showErr(msg) {
+  const el = document.getElementById('taskList');
+  if (!el.querySelector('.err-toast')) {
+    const t = document.createElement('div');
+    t.className = 'err-toast';
+    t.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--err);color:#fff;padding:8px 16px;border-radius:6px;font-size:13px;z-index:999;max-width:90vw';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  }
+}
+
+// Handle GIS script load
+document.addEventListener('DOMContentLoaded', () => {
+  const gisScript = document.querySelector('script[src*="gsi/client"]');
+  if (gisScript) {
+    gisScript.addEventListener('load', () => { if (!tokenClient) initGIS(); });
+  }
+});
+</script>
+</body>
+</html>
