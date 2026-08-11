@@ -173,9 +173,18 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   <div class="auth-screen" id="authScreen">
     <div class="auth-icon">&#10003;</div>
     <div class="auth-title">Tasks</div>
-    <div class="auth-sub">Connect your Google account to manage tasks directly from PritOS. No automations. You control it.</div>
-    <button class="auth-connect" onclick="connectGoogle()">Connect Google Tasks</button>
-    <div class="auth-setup">Need a Client ID? <a onclick="openSettings()">Set it up here</a></div>
+    <div class="auth-sub">Paste your Google access token to connect instantly — no setup needed.</div>
+    <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">
+      <input id="pasteTokenInput" style="width:100%;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:inherit;text-align:center" placeholder="Paste access token here...">
+      <button class="auth-connect" onclick="connectWithPastedToken()">Connect</button>
+    </div>
+    <div style="margin-top:16px;font-size:12px;color:var(--mn);text-align:center;line-height:1.8">
+      Get a token in 60 seconds:<br>
+      1. Open <a href="https://developers.google.com/oauthplayground/" target="_blank" style="color:var(--acc)">OAuth Playground</a><br>
+      2. Search <strong style="color:var(--tx)">Tasks API v1</strong> → select scope → Authorize<br>
+      3. Click <strong style="color:var(--tx)">Exchange authorization code for tokens</strong><br>
+      4. Copy <strong style="color:var(--tx)">Access token</strong> → paste above
+    </div>
   </div>
 </div>
 
@@ -323,6 +332,16 @@ window.onload_gsi = () => { if (!tokenClient) initGIS(); };
 
 function getClientId() {
   return localStorage.getItem(STORAGE_KEY) || '';
+}
+
+function connectWithPastedToken() {
+  const token = document.getElementById('pasteTokenInput').value.trim();
+  if (!token) { showErr('Paste a token first'); return; }
+  accessToken = token;
+  tokenExpiry = Date.now() + 55 * 60 * 1000; // treat as 55min
+  sessionStorage.setItem('pritos_tasks_token', accessToken);
+  sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
+  onConnected();
 }
 
 function connectGoogle() {
