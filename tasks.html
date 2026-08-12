@@ -271,8 +271,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 const CF = 'https://spring-sea-ac0a.prit946.workers.dev';
 const CF_KEY = 'Store8181Prit2026';
 const TASKS_BASE = 'https://tasks.googleapis.com/tasks/v1';
-const STORAGE_KEY = 'pritos_tasks_client_id';
-const DEFAULT_CLIENT_ID = '24271192757-qkecvjnu05hh6c1vusa2cu275ncp0gah.apps.googleusercontent.com';
+const CLIENT_ID = '24271192757-qkecvjnu05hh6c1vusa2cu275ncp0gah.apps.googleusercontent.com';
 const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/tasks';
 
 let accessToken = null;
@@ -291,8 +290,7 @@ window.addEventListener('load', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(r => r && r.update());
   }
-  const saved = localStorage.getItem(STORAGE_KEY) || DEFAULT_CLIENT_ID;
-  if (saved) document.getElementById('clientIdInput').value = saved;
+  localStorage.removeItem('pritos_tasks_client_id');
   const token = sessionStorage.getItem('pritos_tasks_token');
   const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
   if (token && Date.now() < exp) {
@@ -306,10 +304,8 @@ window.addEventListener('load', () => {
 });
 
 function initGIS() {
-  const clientId = getClientId();
-  if (!clientId) return;
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
+    client_id: CLIENT_ID,
     scope: GOOGLE_SCOPES,
     callback: (resp) => {
       if (resp.error) { showErr('Auth: ' + resp.error + (resp.error_description ? ' — ' + resp.error_description : '')); document.getElementById('authScreen').style.display = ''; return; }
@@ -325,10 +321,6 @@ function initGIS() {
 // GIS calls this when library loads
 window.onload_gsi = () => { if (!tokenClient) initGIS(); };
 
-function getClientId() {
-  return localStorage.getItem(STORAGE_KEY) || DEFAULT_CLIENT_ID;
-}
-
 function connectWithPastedToken() {
   const token = document.getElementById('pasteTokenInput').value.trim();
   if (!token) { showErr('Paste a token first'); return; }
@@ -340,8 +332,6 @@ function connectWithPastedToken() {
 }
 
 function connectGoogle() {
-  const clientId = getClientId();
-  if (!clientId) { openSettings(); return; }
   if (!tokenClient) { showErr('GIS not loaded yet. Refresh the page.'); return; }
   tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
@@ -686,8 +676,6 @@ async function callAI(prompt, isExtract = false) {
 
 function openSettings() {
   document.getElementById('settingsModal').classList.add('open');
-  const saved = localStorage.getItem(STORAGE_KEY) || '';
-  document.getElementById('clientIdInput').value = saved;
 }
 
 function closeSettings() {
@@ -695,10 +683,7 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  const val = document.getElementById('clientIdInput').value.trim();
-  if (val) localStorage.setItem(STORAGE_KEY, val);
   closeSettings();
-  location.reload();
 }
 
 function disconnectGoogle() {
