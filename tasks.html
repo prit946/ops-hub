@@ -315,10 +315,7 @@ function initGIS() {
     client_id: clientId,
     scope: GOOGLE_SCOPES,
     callback: (resp) => {
-      if (resp.error) {
-        document.getElementById('authScreen').style.display = '';
-        return;
-      }
+      if (resp.error) { showErr('Auth error: ' + resp.error); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
       sessionStorage.setItem('pritos_tasks_token', accessToken);
@@ -326,10 +323,6 @@ function initGIS() {
       onConnected();
     }
   });
-  // Try silent auth; if no prior consent, callback fires with error and button appears
-  if (!accessToken) {
-    tokenClient.requestAccessToken({ prompt: 'none' });
-  }
 }
 
 // GIS calls this when library loads
@@ -353,7 +346,7 @@ function connectGoogle() {
   const clientId = getClientId();
   if (!clientId) { openSettings(); return; }
   if (!tokenClient) { showErr('GIS not loaded yet. Refresh the page.'); return; }
-  tokenClient.requestAccessToken({ prompt: '' });
+  tokenClient.requestAccessToken({});
 }
 
 async function ensureToken() {
@@ -368,7 +361,7 @@ async function ensureToken() {
       sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
       resolve(true);
     };
-    tokenClient.requestAccessToken({ prompt: '' });
+    tokenClient.requestAccessToken({});
   });
 }
 
