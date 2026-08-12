@@ -1,30 +1,40 @@
-const CACHE = 'pritos-v2';
-const SHELL = [
-  '/ops-hub/',
-  '/ops-hub/index.html',
-  '/ops-hub/drivecore.html',
-  '/ops-hub/qa.html',
-  '/ops-hub/gemini.html',
-  '/ops-hub/context.html',
-  '/ops-hub/manifest.json'
-];
+const CACHE = 'pritos-v3';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ).then(() => self.clients.claim()));
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
-  // Network-first for CF Worker API calls
-  if (e.request.url.includes('workers.dev') || e.request.url.includes('open-meteo') || e.request.url.includes('qrserver')) {
+  const url = e.request.url;
+
+  // Never intercept API calls
+  if (url.includes('workers.dev') || url.includes('googleapis.com') ||
+      url.includes('open-meteo') || url.includes('qrserver') ||
+      url.includes('accounts.google.com')) {
     return;
   }
-  // Cache-first for shell files
+
+  // Network-first for HTML — always get latest version
+  if (e.request.destination === 'document' || url.endsWith('.html') || url.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Cache-first for static assets (CSS, JS, fonts, images)
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
       if (res.ok && e.request.method === 'GET') {
