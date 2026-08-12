@@ -283,29 +283,60 @@ let addingTask = false;
 
 const REDIRECT_URI = 'https://prit946.github.io/ops-hub/tasks.html';
 
+// ─── PKCE helpers ─────────────────────────────────────────────────────────────
+
+function b64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+
+async function pkceChallenge() {
+  const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
+  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+  return { verifier, challenge };
+}
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(r => r && r.update());
   }
   localStorage.removeItem('pritos_tasks_client_id');
 
-  // Check if returning from Google OAuth redirect (token in URL hash)
-  const hash = window.location.hash.substring(1);
-  if (hash) {
-    const p = new URLSearchParams(hash);
-    const token = p.get('access_token');
-    const expiresIn = parseInt(p.get('expires_in') || '3600');
-    if (token) {
-      accessToken = token;
-      tokenExpiry = Date.now() + (expiresIn - 60) * 1000;
+  // Returning from Google OAuth with auth code
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const error = params.get('error');
+  history.replaceState(null, '', window.location.pathname);
+
+  if (error) { showErr('Sign-in error: ' + error); return; }
+
+  if (code) {
+    const verifier = sessionStorage.getItem('pkce_verifier');
+    sessionStorage.removeItem('pkce_verifier');
+    if (!verifier) { showErr('Auth state lost — please sign in again.'); return; }
+    try {
+      const r = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'authorization_code',
+          client_id: CLIENT_ID,
+          code_verifier: verifier,
+          code,
+          redirect_uri: REDIRECT_URI
+        })
+      });
+      const data = await r.json();
+      if (data.error) { showErr('Token error: ' + data.error_description || data.error); return; }
+      accessToken = data.access_token;
+      tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
       sessionStorage.setItem('pritos_tasks_token', accessToken);
       sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
-      history.replaceState(null, '', window.location.pathname);
       onConnected();
       return;
-    }
+    } catch(e) { showErr('Token exchange failed: ' + e.message); return; }
   }
 
   // Check sessionStorage for existing valid token
@@ -322,19 +353,23 @@ window.addEventListener('load', () => {
   document.getElementById('authScreen').style.display = '';
 });
 
-function connectGoogle() {
-  const url = 'https://accounts.google.com/o/oauth2/v2/auth' +
+async function connectGoogle() {
+  const { verifier, challenge } = await pkceChallenge();
+  sessionStorage.setItem('pkce_verifier', verifier);
+  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth' +
     '?client_id=' + encodeURIComponent(CLIENT_ID) +
     '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
-    '&response_type=token' +
+    '&response_type=code' +
     '&scope=' + encodeURIComponent(GOOGLE_SCOPES) +
-    '&prompt=select_account';
-  window.location.href = url;
+    '&code_challenge=' + challenge +
+    '&code_challenge_method=S256' +
+    '&prompt=select_account' +
+    '&access_type=offline';
 }
 
 async function ensureToken() {
   if (accessToken && Date.now() < tokenExpiry) return true;
-  connectGoogle();
+  await connectGoogle();
   return false;
 }
 
