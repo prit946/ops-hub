@@ -312,7 +312,7 @@ function initGIS() {
     client_id: clientId,
     scope: GOOGLE_SCOPES,
     callback: (resp) => {
-      if (resp.error) { showErr('Auth error: ' + resp.error); return; }
+      if (resp.error) { showErr('Auth: ' + resp.error + (resp.error_description ? ' — ' + resp.error_description : '')); document.getElementById('authScreen').style.display = ''; return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
       sessionStorage.setItem('pritos_tasks_token', accessToken);
@@ -343,7 +343,7 @@ function connectGoogle() {
   const clientId = getClientId();
   if (!clientId) { openSettings(); return; }
   if (!tokenClient) { showErr('GIS not loaded yet. Refresh the page.'); return; }
-  tokenClient.requestAccessToken({});
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
 async function ensureToken() {
@@ -358,7 +358,7 @@ async function ensureToken() {
       sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
       resolve(true);
     };
-    tokenClient.requestAccessToken({});
+    tokenClient.requestAccessToken({ prompt: 'select_account' });
   });
 }
 
