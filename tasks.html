@@ -278,6 +278,15 @@ const CF = 'https://spring-sea-ac0a.prit946.workers.dev';
 const CF_KEY = 'Store8181Prit2026';
 const TASKS_BASE = 'https://tasks.googleapis.com/tasks/v1';
 const STORAGE_KEY = 'pritos_tasks_client_id';
+const DEFAULT_CLIENT_ID = '24271192757-qkecvjnu05hh6c1vusa2cu275ncp0gah.apps.googleusercontent.com';
+const GOOGLE_SCOPES = [
+  'https://www.googleapis.com/auth/tasks',
+  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/calendar',
+  'https://mail.google.com/',
+  'https://www.googleapis.com/auth/spreadsheets',
+  'https://www.googleapis.com/auth/contacts',
+].join(' ');
 
 let accessToken = null;
 let tokenExpiry = 0;
@@ -291,7 +300,7 @@ let addingTask = false;
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  const saved = localStorage.getItem(STORAGE_KEY) || DEFAULT_CLIENT_ID;
   if (saved) document.getElementById('clientIdInput').value = saved;
   const token = sessionStorage.getItem('pritos_tasks_token');
   const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
@@ -310,7 +319,7 @@ function initGIS() {
   if (!clientId) return;
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/tasks',
+    scope: GOOGLE_SCOPES,
     callback: (resp) => {
       if (resp.error) { showErr('Auth error: ' + resp.error); return; }
       accessToken = resp.access_token;
@@ -331,7 +340,7 @@ function initGIS() {
 window.onload_gsi = () => { if (!tokenClient) initGIS(); };
 
 function getClientId() {
-  return localStorage.getItem(STORAGE_KEY) || '';
+  return localStorage.getItem(STORAGE_KEY) || DEFAULT_CLIENT_ID;
 }
 
 function connectWithPastedToken() {
