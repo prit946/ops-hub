@@ -323,10 +323,9 @@ function initGIS() {
       onConnected();
     }
   });
-  // Auto-connect if we have a client ID and no active token
+  // Try silent auth first — shows button only if it fails
   if (!accessToken) {
-    const authScreen = document.getElementById('authScreen');
-    authScreen.style.display = '';
+    tokenClient.requestAccessToken({ prompt: '' });
   }
 }
 
