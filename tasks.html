@@ -5,7 +5,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tasks — PritOS</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   --bg:#0f1117;--s1:#161b27;--s2:#1e2535;--bd:#2a3247;
@@ -276,80 +275,67 @@ const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/tasks';
 
 let accessToken = null;
 let tokenExpiry = 0;
-let tokenClient = null;
 let currentListId = '@default';
 let currentListTitle = 'My Tasks';
 let taskLists = [];
 let tasks = [];
 let addingTask = false;
 
+const REDIRECT_URI = 'https://prit946.github.io/ops-hub/tasks.html';
+
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 window.addEventListener('load', () => {
-  // Force SW to check for updates so stale cached code can't persist
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(r => r && r.update());
   }
   localStorage.removeItem('pritos_tasks_client_id');
-  const token = sessionStorage.getItem('pritos_tasks_token');
+
+  // Check if returning from Google OAuth redirect (token in URL hash)
+  const hash = window.location.hash.substring(1);
+  if (hash) {
+    const p = new URLSearchParams(hash);
+    const token = p.get('access_token');
+    const expiresIn = parseInt(p.get('expires_in') || '3600');
+    if (token) {
+      accessToken = token;
+      tokenExpiry = Date.now() + (expiresIn - 60) * 1000;
+      sessionStorage.setItem('pritos_tasks_token', accessToken);
+      sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
+      history.replaceState(null, '', window.location.pathname);
+      onConnected();
+      return;
+    }
+  }
+
+  // Check sessionStorage for existing valid token
+  const saved = sessionStorage.getItem('pritos_tasks_token');
   const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
-  if (token && Date.now() < exp) {
-    accessToken = token;
+  if (saved && Date.now() < exp) {
+    accessToken = saved;
     tokenExpiry = exp;
     onConnected();
+    return;
   }
-  // Wait for GIS to load
-  window.onGISLoaded = initGIS;
-  if (window.google?.accounts) initGIS();
+
+  // No token — show sign-in screen
+  document.getElementById('authScreen').style.display = '';
 });
 
-function initGIS() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
-    scope: GOOGLE_SCOPES,
-    callback: (resp) => {
-      if (resp.error) { showErr('Auth: ' + resp.error + (resp.error_description ? ' — ' + resp.error_description : '')); document.getElementById('authScreen').style.display = ''; return; }
-      accessToken = resp.access_token;
-      tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-      sessionStorage.setItem('pritos_tasks_token', accessToken);
-      sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
-      onConnected();
-    }
-  });
-}
-
-// GIS calls this when library loads
-window.onload_gsi = () => { if (!tokenClient) initGIS(); };
-
-function connectWithPastedToken() {
-  const token = document.getElementById('pasteTokenInput').value.trim();
-  if (!token) { showErr('Paste a token first'); return; }
-  accessToken = token;
-  tokenExpiry = Date.now() + 55 * 60 * 1000; // treat as 55min
-  sessionStorage.setItem('pritos_tasks_token', accessToken);
-  sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
-  onConnected();
-}
-
 function connectGoogle() {
-  if (!tokenClient) { showErr('GIS not loaded yet. Refresh the page.'); return; }
-  tokenClient.requestAccessToken({ prompt: 'select_account' });
+  const url = 'https://accounts.google.com/o/oauth2/v2/auth' +
+    '?client_id=' + encodeURIComponent(CLIENT_ID) +
+    '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
+    '&response_type=token' +
+    '&scope=' + encodeURIComponent(GOOGLE_SCOPES) +
+    '&prompt=select_account';
+  window.location.href = url;
 }
 
 async function ensureToken() {
   if (accessToken && Date.now() < tokenExpiry) return true;
-  if (!tokenClient) return false;
-  return new Promise((resolve) => {
-    tokenClient.callback = (resp) => {
-      if (resp.error) { resolve(false); return; }
-      accessToken = resp.access_token;
-      tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-      sessionStorage.setItem('pritos_tasks_token', accessToken);
-      sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
-      resolve(true);
-    };
-    tokenClient.requestAccessToken({ prompt: 'select_account' });
-  });
+  connectGoogle();
+  return false;
 }
 
 function onConnected() {
@@ -692,7 +678,6 @@ function disconnectGoogle() {
   tokenExpiry = 0;
   sessionStorage.removeItem('pritos_tasks_token');
   sessionStorage.removeItem('pritos_tasks_exp');
-  if (window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(accessToken, () => {});
   closeSettings();
   location.reload();
 }
@@ -747,13 +732,6 @@ function showErr(msg) {
   }
 }
 
-// Handle GIS script load
-document.addEventListener('DOMContentLoaded', () => {
-  const gisScript = document.querySelector('script[src*="gsi/client"]');
-  if (gisScript) {
-    gisScript.addEventListener('load', () => { if (!tokenClient) initGIS(); });
-  }
-});
 </script>
 </body>
 </html>
