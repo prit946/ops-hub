@@ -273,14 +273,7 @@ const CF_KEY = 'Store8181Prit2026';
 const TASKS_BASE = 'https://tasks.googleapis.com/tasks/v1';
 const STORAGE_KEY = 'pritos_tasks_client_id';
 const DEFAULT_CLIENT_ID = '24271192757-qkecvjnu05hh6c1vusa2cu275ncp0gah.apps.googleusercontent.com';
-const GOOGLE_SCOPES = [
-  'https://www.googleapis.com/auth/tasks',
-  'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/calendar',
-  'https://mail.google.com/',
-  'https://www.googleapis.com/auth/spreadsheets',
-  'https://www.googleapis.com/auth/contacts',
-].join(' ');
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/tasks';
 
 let accessToken = null;
 let tokenExpiry = 0;
@@ -294,6 +287,10 @@ let addingTask = false;
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 window.addEventListener('load', () => {
+  // Force SW to check for updates so stale cached code can't persist
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(r => r && r.update());
+  }
   const saved = localStorage.getItem(STORAGE_KEY) || DEFAULT_CLIENT_ID;
   if (saved) document.getElementById('clientIdInput').value = saved;
   const token = sessionStorage.getItem('pritos_tasks_token');
