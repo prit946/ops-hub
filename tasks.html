@@ -218,7 +218,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
     <div class="prompts-section">
       <div class="prompts-label">Ask Anything</div>
       <div class="ai-free-row">
-        <input class="ai-free-input" id="aiInput" placeholder="Ask AI about your tasks...">
+        <input class="ai-free-input" id="aiInput" placeholder="Ask AI about your tasks..." onkeydown="if(event.key==='Enter')sendAI()">
         <button class="ai-send-btn" onclick="sendAI()">Ask</button>
       </div>
     </div>
@@ -672,25 +672,85 @@ async function callAI(prompt, isExtract = false) {
   const resp = document.getElementById('aiResponse');
   resp.className = 'ai-response visible loading';
   resp.textContent = '';
+
+  const lists = taskLists.map(l => l.title).join(', ') || 'none';
+  const system = isExtract
+    ? 'Extract actionable tasks from the note. Return a numbered list, one task per line. Be concise.'
+    : `You are a direct, ADHD-friendly task assistant for Prit. No fluff. Short sentences.
+
+Available task lists: ${lists}
+Current list: ${currentListTitle}
+
+When the user asks you to DO something (delete, add, complete, clear), respond ONLY with JSON — no other text:
+{"action":"delete_list","list_name":"exact list title"}
+{"action":"add_task","list_name":"exact list title","title":"task title"}
+{"action":"complete_task","task_title":"part of task title"}
+{"action":"clear_completed","list_name":"exact list title"}
+
+For questions or analysis, respond with plain text.`;
+
   try {
     const r = await fetch(CF, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'gemini.ask',
-        key: CF_KEY,
-        prompt,
-        system: 'You are a direct, ADHD-friendly task management assistant. No fluff. Short sentences. Bullet points. Get to the point fast.'
-      })
+      body: JSON.stringify({ action: 'gemini.ask', key: CF_KEY, prompt, system })
     });
     const data = await r.json();
     resp.classList.remove('loading');
     if (data.error) { resp.textContent = 'Error: ' + data.error; return; }
-    resp.textContent = data.text || data.answer || JSON.stringify(data);
+    const text = (data.text || data.answer || '').trim();
+
+    if (!isExtract) {
+      try {
+        const act = JSON.parse(text);
+        if (act.action) { await executeAIAction(act, resp); return; }
+      } catch(e) { /* plain text response */ }
+    }
+    resp.textContent = text;
   } catch(e) {
     resp.classList.remove('loading');
     resp.textContent = 'AI error: ' + e.message;
   }
+}
+
+async function executeAIAction(act, resp) {
+  try {
+    if (act.action === 'delete_list') {
+      const list = taskLists.find(l => l.title.toLowerCase() === act.list_name?.toLowerCase());
+      if (!list) { resp.textContent = `List "${act.list_name}" not found.`; return; }
+      if (!confirm(`Delete "${list.title}" and all its tasks?`)) { resp.textContent = 'Cancelled.'; return; }
+      await api('DELETE', '/users/@me/lists/' + list.id);
+      resp.textContent = `✓ Deleted "${list.title}"`;
+      await loadLists();
+
+    } else if (act.action === 'add_task') {
+      const list = taskLists.find(l => l.title.toLowerCase() === act.list_name?.toLowerCase()) || taskLists.find(l => l.id === currentListId);
+      if (!list) { resp.textContent = 'List not found.'; return; }
+      await api('POST', `/lists/${list.id}/tasks`, { title: act.title });
+      resp.textContent = `✓ Added "${act.title}" to ${list.title}`;
+      if (list.id === currentListId) await loadTasks();
+
+    } else if (act.action === 'complete_task') {
+      const task = tasks.find(t => t.title.toLowerCase().includes(act.task_title?.toLowerCase()));
+      if (!task) { resp.textContent = `Task "${act.task_title}" not found in current list.`; return; }
+      const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+      await api('PATCH', `/lists/${listId}/tasks/${task.id}`, { status: 'completed' });
+      resp.textContent = `✓ Completed "${task.title}"`;
+      await loadTasks();
+
+    } else if (act.action === 'clear_completed') {
+      const list = act.list_name
+        ? taskLists.find(l => l.title.toLowerCase() === act.list_name.toLowerCase())
+        : taskLists.find(l => l.id === currentListId);
+      if (!list) { resp.textContent = 'List not found.'; return; }
+      await api('POST', `/lists/${list.id}/clear`);
+      resp.textContent = `✓ Cleared completed tasks from "${list.title}"`;
+      await loadTasks();
+
+    } else {
+      resp.textContent = act.text || 'Done.';
+    }
+  } catch(e) { resp.textContent = 'Failed: ' + e.message; }
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
