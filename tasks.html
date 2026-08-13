@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<script src="https://accounts.google.com/gsi/client" async defer onload="window._gisReady=true;if(window._gisQ)window._gisQ()"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tasks — PritOS</title>
@@ -281,96 +282,81 @@ let taskLists = [];
 let tasks = [];
 let addingTask = false;
 
-const REDIRECT_URI = 'https://prit946.github.io/ops-hub/tasks.html';
-
-// ─── PKCE helpers ─────────────────────────────────────────────────────────────
-
-function b64url(buf) {
-  return btoa(String.fromCharCode(...new Uint8Array(buf)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-}
-
-async function pkceChallenge() {
-  const verifier = b64url(crypto.getRandomValues(new Uint8Array(32)));
-  const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  return { verifier, challenge };
-}
-
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
-window.addEventListener('load', async () => {
+let tokenClient = null;
+
+window.addEventListener('load', () => {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistration().then(r => r && r.update());
   }
   localStorage.removeItem('pritos_tasks_client_id');
 
-  // Returning from Google OAuth with auth code
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  const error = params.get('error');
-  history.replaceState(null, '', window.location.pathname);
-
-  if (error) { showErr('Sign-in error: ' + error); return; }
-
-  if (code) {
-    const verifier = sessionStorage.getItem('pkce_verifier');
-    sessionStorage.removeItem('pkce_verifier');
-    if (!verifier) { showErr('Auth state lost — please sign in again.'); return; }
-    try {
-      const r = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'authorization_code',
-          client_id: CLIENT_ID,
-          code_verifier: verifier,
-          code,
-          redirect_uri: REDIRECT_URI
-        })
-      });
-      const data = await r.json();
-      if (data.error) { showErr('Token error: ' + data.error_description || data.error); return; }
-      accessToken = data.access_token;
-      tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
-      sessionStorage.setItem('pritos_tasks_token', accessToken);
-      sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
-      onConnected();
-      return;
-    } catch(e) { showErr('Token exchange failed: ' + e.message); return; }
-  }
-
-  // Check sessionStorage for existing valid token
   const saved = sessionStorage.getItem('pritos_tasks_token');
   const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
   if (saved && Date.now() < exp) {
     accessToken = saved;
     tokenExpiry = exp;
+    initGIS();
     onConnected();
     return;
   }
 
-  // No token — show sign-in screen
-  document.getElementById('authScreen').style.display = '';
+  initGIS();
 });
 
-async function connectGoogle() {
-  const { verifier, challenge } = await pkceChallenge();
-  sessionStorage.setItem('pkce_verifier', verifier);
-  window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth' +
-    '?client_id=' + encodeURIComponent(CLIENT_ID) +
-    '&redirect_uri=' + encodeURIComponent(REDIRECT_URI) +
-    '&response_type=code' +
-    '&scope=' + encodeURIComponent(GOOGLE_SCOPES) +
-    '&code_challenge=' + challenge +
-    '&code_challenge_method=S256' +
-    '&prompt=select_account' +
-    '&access_type=offline';
+function initGIS() {
+  const ready = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: GOOGLE_SCOPES,
+      callback: (resp) => {
+        if (resp.error) {
+          showErr('Sign-in failed: ' + resp.error);
+          document.getElementById('authScreen').style.display = '';
+          return;
+        }
+        accessToken = resp.access_token;
+        tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+        sessionStorage.setItem('pritos_tasks_token', accessToken);
+        sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
+        onConnected();
+      },
+      error_callback: (err) => {
+        if (err.type === 'popup_failed_to_open') {
+          showErr('Popup blocked — allow popups for this site in Chrome and try again.');
+        } else {
+          showErr('Auth error: ' + err.type);
+        }
+        document.getElementById('authScreen').style.display = '';
+      }
+    });
+  };
+  if (window._gisReady) ready();
+  else window._gisQ = ready;
+}
+
+function connectGoogle() {
+  if (!tokenClient) { showErr('Still loading — try again in a second.'); return; }
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
 async function ensureToken() {
   if (accessToken && Date.now() < tokenExpiry) return true;
-  await connectGoogle();
-  return false;
+  return new Promise(resolve => {
+    const orig = tokenClient?.callback;
+    if (!tokenClient) { resolve(false); return; }
+    tokenClient.callback = (resp) => {
+      tokenClient.callback = orig;
+      if (resp.error) { resolve(false); return; }
+      accessToken = resp.access_token;
+      tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      sessionStorage.setItem('pritos_tasks_token', accessToken);
+      sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
+      resolve(true);
+    };
+    tokenClient.requestAccessToken({ prompt: 'none' });
+  });
 }
 
 function onConnected() {
