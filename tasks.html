@@ -162,6 +162,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   <span class="hdr-title">Tasks</span>
   <span class="hdr-status" id="connStatus">Not connected</span>
   <button class="icon-btn" onclick="refreshTasks()" title="Refresh">&#8635;</button>
+  <button class="icon-btn" id="delListBtn" onclick="deleteCurrentList()" title="Delete this list" style="color:var(--err);border-color:var(--err);display:none">&#128465;</button>
   <button class="icon-btn" onclick="openSettings()" title="Settings">&#9881;</button>
 </div>
 
@@ -343,18 +344,28 @@ function connectGoogle() {
 
 async function ensureToken() {
   if (accessToken && Date.now() < tokenExpiry) return true;
+  if (!tokenClient) return false;
   return new Promise(resolve => {
-    const orig = tokenClient?.callback;
-    if (!tokenClient) { resolve(false); return; }
+    let settled = false;
+    const finish = (ok) => {
+      if (settled) return;
+      settled = true;
+      tokenClient.callback = prevCb;
+      tokenClient.error_callback = prevErr;
+      resolve(ok);
+    };
+    const prevCb = tokenClient.callback;
+    const prevErr = tokenClient.error_callback;
     tokenClient.callback = (resp) => {
-      tokenClient.callback = orig;
-      if (resp.error) { resolve(false); return; }
+      if (resp.error) { finish(false); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
       sessionStorage.setItem('pritos_tasks_token', accessToken);
       sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
-      resolve(true);
+      finish(true);
     };
+    tokenClient.error_callback = () => finish(false);
+    setTimeout(() => finish(false), 8000);
     tokenClient.requestAccessToken({ prompt: 'none' });
   });
 }
@@ -364,13 +375,24 @@ function onConnected() {
   document.getElementById('connStatus').className = 'hdr-status connected';
   document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   document.getElementById('actionBar').style.display = 'flex';
-  loadLists();
+  document.getElementById('authScreen').style.display = 'none';
+  loadLists().then(() => updateDelBtn());
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 async function api(method, path, body) {
-  if (!await ensureToken()) throw new Error('Not authenticated');
+  if (!await ensureToken()) {
+    accessToken = null; tokenExpiry = 0;
+    sessionStorage.removeItem('pritos_tasks_token');
+    sessionStorage.removeItem('pritos_tasks_exp');
+    document.getElementById('authScreen').style.display = '';
+    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('connStatus').textContent = 'Not connected';
+    document.getElementById('connStatus').className = 'hdr-status';
+    document.getElementById('listTabs').innerHTML = '';
+    throw new Error('Session expired — tap Sign In again');
+  }
   const opts = {
     method,
     headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' }
@@ -417,6 +439,7 @@ function switchList(id, title) {
   currentListId = id;
   currentListTitle = title;
   renderListTabs();
+  updateDelBtn();
   loadTasks();
 }
 
@@ -702,12 +725,26 @@ For questions or analysis, respond with plain text.`;
 async function executeAIAction(act, resp) {
   try {
     if (act.action === 'delete_list') {
-      const list = taskLists.find(l => l.title.toLowerCase() === act.list_name?.toLowerCase());
-      if (!list) { resp.textContent = `List "${act.list_name}" not found.`; return; }
+      const name = act.list_name?.toLowerCase() || '';
+      const list = taskLists.find(l => l.title.toLowerCase() === name)
+                || taskLists.find(l => l.title.toLowerCase().includes(name) || name.includes(l.title.toLowerCase()));
+      if (!list) { resp.textContent = `List "${act.list_name}" not found. Lists: ${taskLists.map(l=>l.title).join(', ')}`; return; }
       if (!confirm(`Delete "${list.title}" and all its tasks?`)) { resp.textContent = 'Cancelled.'; return; }
       await api('DELETE', '/users/@me/lists/' + list.id);
+      // Optimistic: remove from local state immediately
+      taskLists = taskLists.filter(l => l.id !== list.id);
+      if (currentListId === list.id) {
+        const next = taskLists.find(l => l.title === 'My Tasks') || taskLists[0];
+        currentListId = next?.id || '@default';
+        currentListTitle = next?.title || 'My Tasks';
+      }
+      renderListTabs();
+      updateDelBtn();
+      tasks = [];
+      renderTasks();
       resp.textContent = `✓ Deleted "${list.title}"`;
-      await loadLists();
+      await loadTasks();
+      setTimeout(() => loadLists(), 1500);
 
     } else if (act.action === 'add_task') {
       const list = taskLists.find(l => l.title.toLowerCase() === act.list_name?.toLowerCase()) || taskLists.find(l => l.id === currentListId);
@@ -796,6 +833,39 @@ async function nukeAllTasks() {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+// ─── Delete current list ──────────────────────────────────────────────────────
+
+async function deleteCurrentList() {
+  const list = taskLists.find(l => l.id === currentListId);
+  if (!list || list.title === 'My Tasks') { showErr("Can't delete My Tasks"); return; }
+  if (!confirm(`Delete "${list.title}" and ALL its tasks?\n\nThis cannot be undone.`)) return;
+  const btn = document.getElementById('delListBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await api('DELETE', '/users/@me/lists/' + list.id);
+    taskLists = taskLists.filter(l => l.id !== list.id);
+    const next = taskLists.find(l => l.title === 'My Tasks') || taskLists[0];
+    currentListId = next?.id || '@default';
+    currentListTitle = next?.title || 'My Tasks';
+    renderListTabs();
+    updateDelBtn();
+    tasks = [];
+    renderTasks();
+    await loadTasks();
+  } catch(e) {
+    if (btn) btn.disabled = false;
+    showErr(e.message);
+  }
+}
+
+function updateDelBtn() {
+  const btn = document.getElementById('delListBtn');
+  if (!btn) return;
+  const list = taskLists.find(l => l.id === currentListId);
+  btn.style.display = (list && list.title !== 'My Tasks') ? '' : 'none';
+  btn.disabled = false;
+}
 
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
