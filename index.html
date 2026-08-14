@@ -679,9 +679,13 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
         <div class="set-lbl">GAS</div>
         <div class="set-val">Claude Gateway v56</div>
       </div>
-      <div class="set-row" style="border:none">
+      <div class="set-row">
         <div class="set-lbl">Install</div>
         <div class="set-val" style="color:var(--mn)">Use Share → Add to Home Screen</div>
+      </div>
+      <div class="set-row" style="border:none">
+        <div class="set-lbl">Cache</div>
+        <div class="set-val"><button onclick="hardReload()" style="font-size:11px;font-weight:700;padding:5px 14px;border-radius:5px;background:var(--s2);border:1px solid var(--bd2);color:var(--acc-l);cursor:pointer">Force Refresh</button></div>
       </div>
     </div>
   </div>
@@ -1105,6 +1109,8 @@ function markSetupDone(id){
   loadSetupChecklist();
   toast('Marked done ✓');
 }
+
+function hardReload(){location.replace(location.href.split('?')[0]+'?v='+Date.now());}
 
 // ── INIT ─────────────────────────────────────────────
 document.getElementById('save-store-note').addEventListener('click',()=>saveNote('store'));
