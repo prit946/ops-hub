@@ -170,18 +170,17 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   <div class="loading-row">Loading...</div>
 </div>
 
-<div class="tasks-scroll" id="taskList">
-  <div class="auth-screen" id="authScreen">
-    <div class="auth-icon">&#10003;</div>
-    <div class="auth-title">Tasks</div>
-    <div class="auth-sub">Connect your Google account to get started.</div>
-    <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px">
-      <button class="auth-connect" onclick="connectGoogle()" style="background:var(--acc);border-color:var(--acc);color:#fff;font-size:15px;padding:13px">
-        Sign in with Google
-      </button>
-    </div>
+<div class="auth-screen" id="authScreen">
+  <div class="auth-icon">&#10003;</div>
+  <div class="auth-title">Tasks</div>
+  <div class="auth-sub">Connect your Google account to get started.</div>
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px">
+    <button class="auth-connect" onclick="connectGoogle()" style="background:var(--acc);border-color:var(--acc);color:#fff;font-size:15px;padding:13px">
+      Sign in with Google
+    </button>
   </div>
 </div>
+<div class="tasks-scroll" id="taskList" style="display:none"></div>
 
 <div class="action-bar" id="actionBar" style="display:none">
   <button class="ai-btn" onclick="openAI()">&#10024; AI Assist</button>
@@ -373,9 +372,10 @@ async function ensureToken() {
 function onConnected() {
   document.getElementById('connStatus').textContent = 'Connected';
   document.getElementById('connStatus').className = 'hdr-status connected';
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('taskList').style.display = '';
   document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   document.getElementById('actionBar').style.display = 'flex';
-  document.getElementById('authScreen').style.display = 'none';
   loadLists().then(() => updateDelBtn());
 }
 
@@ -386,6 +386,7 @@ async function api(method, path, body) {
     accessToken = null; tokenExpiry = 0;
     sessionStorage.removeItem('pritos_tasks_token');
     sessionStorage.removeItem('pritos_tasks_exp');
+    document.getElementById('taskList').style.display = 'none';
     document.getElementById('authScreen').style.display = '';
     document.getElementById('actionBar').style.display = 'none';
     document.getElementById('connStatus').textContent = 'Not connected';
