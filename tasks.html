@@ -229,26 +229,58 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <h3>&#9881; Settings</h3>
-    <div>
-      <div class="modal-label">Google OAuth Client ID</div>
-      <input id="clientIdInput" type="text" placeholder="xxxxxxxxx.apps.googleusercontent.com">
-      <div class="modal-hint" style="margin-top:6px">
-        Create a free OAuth client at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">console.cloud.google.com</a>.<br>
-        Type: <strong>Web application</strong>.<br>
-        Add <strong>https://prit946.github.io</strong> as an authorized JavaScript origin.<br>
-        Scopes needed: <code>tasks</code>
+  <div class="modal" style="max-height:85dvh;overflow-y:auto;gap:0">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-size:16px">&#9881; Settings</h3>
+      <button class="modal-cancel" style="padding:5px 10px" onclick="closeSettings()">&#10005;</button>
+    </div>
+
+    <!-- Status -->
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:8px">Connection Status</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span id="settingsConnDot" style="width:8px;height:8px;border-radius:50%;background:var(--err);flex-shrink:0"></span>
+        <span id="settingsConnLabel" style="font-size:13px;font-weight:600">Not signed in to Google</span>
+      </div>
+      <div style="font-size:11px;color:var(--mn);line-height:1.5">
+        Sign in so the app can read and update your Google Tasks. Your tasks never leave your device — the app talks directly to Google.
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeSettings()">Cancel</button>
-      <button class="modal-save" onclick="saveSettings()">Save</button>
+
+    <!-- What is this app -->
+    <div style="margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:8px">&#128221; What is this?</div>
+      <div style="font-size:12px;color:var(--mn);line-height:1.6;background:var(--s2);border-radius:8px;padding:12px;border:1px solid var(--bd)">
+        A fast, mobile-first Google Tasks app built into PritOS. Works as a PWA — add it to your home screen and it opens like a native app. Your task lists sync with Google Tasks, so anything you add here shows up in Google Tasks everywhere else too.
+      </div>
     </div>
-    <div class="danger-zone">
+
+    <!-- AI Assist -->
+    <div style="margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:8px">&#10024; AI Assist — What it does</div>
+      <div style="font-size:12px;color:var(--mn);line-height:1.6;background:var(--s2);border-radius:8px;padding:12px;border:1px solid var(--bd);display:flex;flex-direction:column;gap:8px">
+        <div>Tap <strong style="color:var(--tx)">AI Assist</strong> at the bottom to open the AI panel. It reads your current task list and can:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Prioritize</strong> — ranks what matters most right now</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Focus</strong> — picks one thing to do next</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Overdue</strong> — flags what's past due</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Skip</strong> — suggests low-value tasks to drop</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Group</strong> — clusters similar tasks together</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Game plan</strong> — builds today's schedule</div>
+        </div>
+        <div>You can also type a custom request like <em>"add buy milk for tomorrow"</em> or <em>"delete all completed tasks"</em> — it takes action directly on your list.</div>
+        <div style="color:var(--warn);font-size:11px">⚡ Powered by Gemini via the PritOS gateway. Requires internet.</div>
+      </div>
+    </div>
+
+    <!-- Force refresh -->
+    <div class="danger-zone" style="border-color:var(--bd)">
+      <button class="danger-btn" style="border-color:var(--bd);color:var(--mn)" onclick="hardReload()">&#128260; Force Refresh (clear cache)</button>
       <button class="danger-btn" onclick="disconnectGoogle()">&#128274; Disconnect Google</button>
       <button class="danger-btn" onclick="nukeAllTasks()">&#128165; Nuke All Tasks</button>
     </div>
+
   </div>
 </div>
 
@@ -780,7 +812,17 @@ async function executeAIAction(act, resp) {
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 function openSettings() {
+  const connected = accessToken && tokenExpiry > Date.now();
+  document.getElementById('settingsConnDot').style.background = connected ? 'var(--ok)' : 'var(--err)';
+  document.getElementById('settingsConnLabel').textContent = connected ? 'Connected to Google Tasks' : 'Not signed in to Google';
   document.getElementById('settingsModal').classList.add('open');
+}
+
+function hardReload() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+  }
+  caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => location.reload(true));
 }
 
 function closeSettings() {
