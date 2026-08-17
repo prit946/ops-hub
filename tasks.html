@@ -171,6 +171,32 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 .add-date-input{flex:1;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;color:var(--tx);font-size:12px;font-family:inherit;color-scheme:dark light}
 .add-date-input:focus{outline:none;border-color:var(--acc)}
 
+/* Subtask indentation */
+.task-group{border-bottom:1px solid var(--bd)}
+.task-group>.task-item{border-bottom:1px solid var(--bd)}
+.subtask-row{display:flex;align-items:flex-start;gap:10px;padding:7px 16px 7px 40px;border-bottom:1px solid var(--bd);background:var(--bg);transition:.1s}
+.subtask-row:last-child{border-bottom:none}
+.subtask-row:hover{background:var(--s2)}
+.subtask-check{width:14px;height:14px;border:1.5px solid var(--bd);border-radius:3px;flex-shrink:0;cursor:pointer;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.subtask-check:hover{border-color:var(--acc)}
+.subtask-check.checked{background:var(--live);border-color:var(--live)}
+.subtask-check.checked::after{content:'✓';font-size:8px;color:#fff;font-weight:700}
+.subtask-title{font-size:13px;color:var(--mx);flex:1;cursor:pointer;line-height:1.4}
+.subtask-title.done{text-decoration:line-through;color:var(--done)}
+.subtask-del{background:none;border:none;color:var(--mn);cursor:pointer;padding:2px 5px;border-radius:4px;font-size:13px;opacity:0;transition:.15s;flex-shrink:0}
+.subtask-row:hover .subtask-del{opacity:1}
+.subtask-del:hover{color:var(--err)}
+
+/* Org preview */
+.org-group{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.org-group-title{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--tx)}
+.org-subtask{font-size:12px;color:var(--mn);padding:3px 0 3px 10px;border-left:2px solid var(--acc);margin-top:3px;line-height:1.4}
+
+/* Organize action button */
+.action-prompt-btn{width:100%;padding:9px 12px;border:1.5px solid var(--acc);border-radius:8px;background:rgba(139,92,246,.08);color:var(--acc);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;text-align:left;margin-bottom:6px}
+.action-prompt-btn:hover{background:var(--acc);color:#fff}
+.action-prompt-btn:active{opacity:.85}
+
 /* Theme toggle */
 .theme-toggle{position:relative;width:40px;height:22px;flex-shrink:0}
 .theme-toggle input{opacity:0;width:0;height:0}
@@ -230,22 +256,26 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   </div>
   <div class="sheet-body">
     <div class="prompts-section">
-      <div class="prompts-label">Quick Actions</div>
+      <div class="prompts-label" style="color:var(--acc);margin-bottom:8px">&#9889; Actions — edits your tasks</div>
+      <button class="action-prompt-btn" onclick="organizeList()">&#129529; Organize + Group This List</button>
+      <button class="action-prompt-btn" onclick="runPrompt('daily3')">&#127919; Pick My Daily 3 — add to Today list</button>
+    </div>
+    <div class="prompts-section">
+      <div class="prompts-label">Analysis</div>
       <div class="prompts-grid">
-        <button class="prompt-btn" onclick="runPrompt('prioritize')">&#128293; Prioritize my tasks</button>
-        <button class="prompt-btn" onclick="runPrompt('focus')">&#127919; What to focus on now?</button>
+        <button class="prompt-btn" onclick="runPrompt('prioritize')">&#128293; Prioritize</button>
+        <button class="prompt-btn" onclick="runPrompt('focus')">&#127349; Focus now</button>
         <button class="prompt-btn" onclick="runPrompt('overdue')">&#128680; What&#8217;s overdue?</button>
-        <button class="prompt-btn" onclick="runPrompt('skip')">&#128465; What can I skip?</button>
-        <button class="prompt-btn" onclick="runPrompt('group')">&#128193; Group similar tasks</button>
-        <button class="prompt-btn" onclick="runPrompt('workload')">&#128202; Summarize my workload</button>
-        <button class="prompt-btn" onclick="runPrompt('today')">&#9200; Today&#8217;s game plan</button>
-        <button class="prompt-btn" onclick="runPrompt('done')">&#9989; What did I accomplish?</button>
+        <button class="prompt-btn" onclick="runPrompt('skip')">&#128465; What to skip?</button>
+        <button class="prompt-btn" onclick="runPrompt('workload')">&#128202; Workload check</button>
+        <button class="prompt-btn" onclick="runPrompt('today')">&#9200; Game plan</button>
+        <button class="prompt-btn" onclick="runPrompt('done')">&#9989; Wins</button>
       </div>
     </div>
     <div class="prompts-section">
-      <div class="prompts-label">Add Task from Note</div>
+      <div class="prompts-label">&#129504; Brain Dump — paste anything, AI converts to tasks</div>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input class="ai-free-input" id="noteInput" placeholder="Paste a note, email snippet, or idea..." style="flex:1">
+        <input class="ai-free-input" id="noteInput" placeholder="Type or paste random thoughts, notes, ideas..." style="flex:1">
         <button class="ai-send-btn" onclick="extractTasks()">Extract</button>
       </div>
     </div>
@@ -563,7 +593,7 @@ async function loadTasks() {
   document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   try {
     const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
-    const data = await api('GET', `/lists/${listId}/tasks?showCompleted=true&maxResults=100`);
+    const data = await api('GET', `/lists/${listId}/tasks?showCompleted=true&showHidden=true&maxResults=100`);
     tasks = data.items || [];
     renderTasks();
   } catch(e) { showErr(e.message); }
@@ -574,8 +604,20 @@ function renderTasks() {
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
 
-  const overdue=[], dueToday=[], upcoming=[], noDate=[], done=[];
+  // Build subtask map, bucket only top-level tasks
+  const subtasksByParent = {};
+  const parentTasks = [];
   tasks.forEach(t => {
+    if (t.parent) {
+      if (!subtasksByParent[t.parent]) subtasksByParent[t.parent] = [];
+      subtasksByParent[t.parent].push(t);
+    } else {
+      parentTasks.push(t);
+    }
+  });
+
+  const overdue=[], dueToday=[], upcoming=[], noDate=[], done=[];
+  parentTasks.forEach(t => {
     if (t.status === 'completed') { done.push(t); return; }
     if (!t.due) { noDate.push(t); return; }
     const d = new Date(t.due);
@@ -585,60 +627,79 @@ function renderTasks() {
   });
 
   // Apply filter
-  let showOverdue = true, showToday = true, showUpcoming = true, showNoDate = true, showDone = true;
-  if (currentFilter === 'today')    { showOverdue=false; showUpcoming=false; showNoDate=false; showDone=false; }
-  if (currentFilter === 'overdue')  { showToday=false; showUpcoming=false; showNoDate=false; showDone=false; }
-  if (currentFilter === 'upcoming') { showOverdue=false; showToday=false; showNoDate=false; showDone=false; }
-  if (currentFilter === 'nodate')   { showOverdue=false; showToday=false; showUpcoming=false; showDone=false; }
+  let showOverdue=true, showToday=true, showUpcoming=true, showNoDate=true, showDone=true;
+  if (currentFilter==='today')    { showOverdue=false; showUpcoming=false; showNoDate=false; showDone=false; }
+  if (currentFilter==='overdue')  { showToday=false; showUpcoming=false; showNoDate=false; showDone=false; }
+  if (currentFilter==='upcoming') { showOverdue=false; showToday=false; showNoDate=false; showDone=false; }
+  if (currentFilter==='nodate')   { showOverdue=false; showToday=false; showUpcoming=false; showDone=false; }
 
   const visible = [
-    ...(showOverdue ? overdue : []),
-    ...(showToday ? dueToday : []),
-    ...(showUpcoming ? upcoming : []),
-    ...(showNoDate ? noDate : []),
-    ...(showDone ? done : []),
+    ...(showOverdue?overdue:[]), ...(showToday?dueToday:[]),
+    ...(showUpcoming?upcoming:[]), ...(showNoDate?noDate:[]), ...(showDone?done:[])
   ];
-
   if (!visible.length) {
-    const msg = currentFilter === 'all' ? 'No tasks. You\'re clear.' : `No ${currentFilter} tasks.`;
+    const msg = currentFilter==='all' ? 'No tasks. You\'re clear.' : `No ${currentFilter} tasks.`;
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9989;</div><div class="empty-msg">${msg}<br><span style="font-size:12px">Tap + Add Task to get started.</span></div></div>`;
     return;
   }
 
+  const renderSection = (list) => list.map(t => taskWithSubsHTML(t, subtasksByParent)).join('');
+
   let html = '';
   if (showOverdue && overdue.length) {
     html += `<div class="section-label" style="color:var(--err)">Overdue (${overdue.length})</div>`;
-    overdue.forEach(t => html += taskHTML(t));
+    html += renderSection(overdue);
   }
   if (showToday && dueToday.length) {
     html += `<div class="section-label" style="color:var(--warn)">Today</div>`;
-    dueToday.forEach(t => html += taskHTML(t));
+    html += renderSection(dueToday);
   }
   if (showUpcoming && upcoming.length) {
     html += `<div class="section-label">Upcoming</div>`;
-    upcoming.forEach(t => html += taskHTML(t));
+    html += renderSection(upcoming);
   }
   if (showNoDate && noDate.length) {
     html += `<div class="section-label">No Date</div>`;
-    noDate.forEach(t => html += taskHTML(t));
+    html += renderSection(noDate);
   }
   if (showDone && done.length) {
     html += `<div class="section-label">Completed (${done.length})</div>`;
-    done.forEach(t => html += taskHTML(t));
+    html += renderSection(done);
   }
   el.innerHTML = html;
 }
 
-function taskHTML(t) {
+function taskWithSubsHTML(t, subtasksByParent) {
+  const subs = subtasksByParent[t.id] || [];
+  if (!subs.length) return taskHTML(t);
+  const activeSubs = subs.filter(s => s.status !== 'completed');
+  const doneSubs = subs.filter(s => s.status === 'completed');
+  const subsHtml = [...activeSubs, ...doneSubs].map(s => subtaskHTML(s)).join('');
+  return `<div class="task-group">${taskHTML(t, true)}${subsHtml}</div>`;
+}
+
+function subtaskHTML(t) {
+  const done = t.status === 'completed';
+  return `<div class="subtask-row" id="task-${t.id}">
+    <div class="subtask-check${done?' checked':''}" onclick="toggleTask('${t.id}','${done?'needsAction':'completed'}')"></div>
+    <div class="subtask-title${done?' done':''}" onclick="openEdit('${t.id}')">${escHtml(t.title||'(no title)')}</div>
+    <button class="subtask-del" onclick="deleteTask('${t.id}')" title="Delete">&#215;</button>
+  </div>`;
+}
+
+function taskHTML(t, isGroupParent) {
   const done = t.status === 'completed';
   const due = t.due ? fmtDue(t.due) : '';
   const dueClass = due.overdue ? 'task-due overdue' : due.today ? 'task-due today' : 'task-due';
   const checkClass = done ? 'task-check checked' : 'task-check';
-  const itemClass = done ? 'task-item completed' : 'task-item';
+  let itemClass = done ? 'task-item completed' : 'task-item';
+  // Strip [ai:DATE] from displayed notes
+  const rawNotes = (t.notes || '').replace(/\[ai:\d{4}-\d{2}-\d{2}\]\s*/g, '').trim();
   const escapedTitle = escHtml(t.title || '(no title)');
-  const escapedNotes = t.notes ? `<div class="task-notes">${escHtml(t.notes)}</div>` : '';
+  const escapedNotes = rawNotes ? `<div class="task-notes">${escHtml(rawNotes)}</div>` : '';
   const dueLbl = due.label ? `<span class="${dueClass}">${due.label}</span>` : '';
-  return `<div class="${itemClass}" id="task-${t.id}">
+  const extraStyle = isGroupParent ? 'border-bottom:none;background:var(--s2)' : '';
+  return `<div class="${itemClass}" id="task-${t.id}" style="${extraStyle}">
     <div class="${checkClass}" onclick="toggleTask('${t.id}','${done?'needsAction':'completed'}')"></div>
     <div class="task-body" onclick="openEdit('${t.id}')" style="cursor:pointer">
       <div class="task-title">${escapedTitle}</div>
@@ -842,13 +903,13 @@ function closeAI() {
 
 const PROMPT_TEMPLATES = {
   prioritize: 'Here are my current tasks. Prioritize them by importance and urgency. Be direct and short.',
-  focus: 'Given these tasks, what ONE thing should I focus on RIGHT NOW and why?',
-  overdue: 'Which of these tasks are overdue or at risk? Flag them and suggest what to do.',
-  skip: 'Which tasks in this list could I skip or delegate without real consequences?',
-  group: 'Group these tasks by category or project. Keep it tight.',
-  workload: 'Summarize my total workload. How heavy is it? What\'s the shape of the work?',
-  today: 'Build a realistic game plan for what I can actually finish today.',
-  done: 'Based on the completed tasks, what did I get done? Give me a quick win summary.',
+  focus: 'Given these tasks, what ONE thing should I focus on RIGHT NOW and why? One sentence answer.',
+  overdue: 'Which of these tasks are overdue or at risk? Flag them and say what to do. Short.',
+  skip: 'Which tasks could I skip or delete without real consequences? Be ruthless.',
+  workload: 'Summarize my total workload in 3 sentences max. Heavy/medium/light and the main themes.',
+  today: 'Build a realistic game plan for what I can finish today. Short numbered list only.',
+  done: 'Based on completed tasks, what did I get done? Quick wins summary, 3-5 bullets.',
+  daily3: 'From my tasks, pick EXACTLY 3 to focus on today. Return a numbered list of 3 — task name then one-word reason (urgent/important/quick). Nothing else.',
 };
 
 async function runPrompt(type) {
@@ -995,6 +1056,166 @@ async function executeAIAction(act, resp) {
       resp.textContent = act.text || 'Done.';
     }
   } catch(e) { resp.textContent = 'Failed: ' + e.message; }
+}
+
+// ─── Organize List ────────────────────────────────────────────────────────────
+
+async function organizeList() {
+  const activeTasks = tasks.filter(t => t.status !== 'completed' && !t.parent);
+  if (!activeTasks.length) { showErr('No active tasks to organize.'); return; }
+
+  const resp = document.getElementById('aiResponse');
+  resp.className = 'ai-response visible loading';
+  resp.textContent = 'Analyzing ' + activeTasks.length + ' tasks...';
+  // Remove any old apply button
+  resp.nextElementSibling?.tagName === 'BUTTON' && resp.nextElementSibling.remove();
+
+  const taskData = activeTasks.map(t => {
+    const aiMatch = (t.notes || '').match(/\[ai:(\d{4}-\d{2}-\d{2})\]/);
+    return {
+      id: t.id,
+      title: t.title,
+      notes_preview: (t.notes || '').replace(/\[ai:\d{4}-\d{2}-\d{2}\]\s*/g, '').slice(0, 80) || undefined,
+      ai_cleaned: aiMatch ? aiMatch[1] : null,
+    };
+  });
+
+  const prompt = `Organize these Google Tasks for someone with ADHD who needs a clean, focused list.
+
+INPUT (JSON array of tasks):
+${JSON.stringify(taskData, null, 2)}
+
+RULES:
+1. Group tasks that share a subject or project under ONE parent task
+2. A group needs at least 2 tasks — don't make a group of 1
+3. Rewrite titles to be: imperative verb + direct object, max 7 words, no filler words
+4. Tasks with ai_cleaned date were already organized — only move them into a group if they clearly belong; don't rewrite unless title is obviously wrong
+5. Standalone tasks that don't fit any group go in "keep" array
+6. "keep" tasks: still rewrite the title to be clean and direct unless ai_cleaned
+
+RETURN ONLY this exact JSON (no markdown, no explanation):
+{"groups":[{"parent_title":"string","subtasks":[{"title":"string","original_id":"string"}]}],"keep":[{"title":"string","original_id":"string"}]}`;
+
+  try {
+    const r = await fetch(CF, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'gemini.ask', key: CF_KEY, prompt,
+        system: 'You are a task organizer. Output ONLY valid JSON. No markdown fences, no explanation, no extra text. Just the JSON object starting with { and ending with }.'
+      })
+    });
+    const data = await r.json();
+    resp.classList.remove('loading');
+    if (data.error) { resp.textContent = 'AI error: ' + data.error; return; }
+
+    const raw = (data.text || data.answer || '').trim().replace(/^```json?\s*/i, '').replace(/```\s*$/,'').trim();
+    let plan;
+    try { plan = JSON.parse(raw); }
+    catch(e) { resp.textContent = 'AI returned unexpected format — try again.'; return; }
+
+    showOrganizePreview(plan, resp);
+  } catch(e) {
+    resp.classList.remove('loading');
+    resp.textContent = 'Error: ' + e.message;
+  }
+}
+
+function showOrganizePreview(plan, resp) {
+  const groups = plan.groups || [];
+  const keep = plan.keep || [];
+  const totalGrouped = groups.reduce((n, g) => n + (g.subtasks || []).length, 0);
+
+  if (!groups.length && !keep.length) {
+    resp.textContent = 'Your list is already clean — nothing to reorganize.';
+    return;
+  }
+
+  let html = `<div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:10px;letter-spacing:.4px;text-transform:uppercase">Preview — ${groups.length} group${groups.length!==1?'s':''}, ${totalGrouped} tasks grouped</div>`;
+
+  groups.forEach(g => {
+    html += `<div class="org-group"><div class="org-group-title">&#128193; ${escHtml(g.parent_title)}</div>`;
+    (g.subtasks || []).forEach(s => { html += `<div class="org-subtask">&#8594; ${escHtml(s.title)}</div>`; });
+    html += `</div>`;
+  });
+
+  if (keep.length) {
+    html += `<div style="font-size:10px;font-weight:700;color:var(--mn);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 6px">Standalone (no group)</div>`;
+    keep.forEach(k => { html += `<div style="font-size:12px;color:var(--mn);padding:4px 0;border-bottom:1px solid var(--bd)">&#8226; ${escHtml(k.title)}</div>`; });
+  }
+
+  resp.innerHTML = html;
+  resp.className = 'ai-response visible';
+
+  const btn = document.createElement('button');
+  btn.className = 'save-btn';
+  btn.style.cssText = 'margin-top:12px;width:100%;padding:11px;font-size:14px;font-weight:700';
+  btn.textContent = `&#10003; Apply — ${groups.length} groups + ${keep.length} standalone`;
+  btn.onclick = () => applyOrganization(plan, btn);
+  resp.after(btn);
+}
+
+async function applyOrganization(plan, btn) {
+  btn.disabled = true;
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const today = new Date().toISOString().slice(0, 10);
+  const aiTag = `[ai:${today}]`;
+  let created = 0, errors = 0;
+
+  const toDelete = new Set();
+
+  // Step 1: create all parent + subtask pairs first (safe — originals still exist)
+  for (const group of (plan.groups || [])) {
+    let parentId;
+    try {
+      btn.textContent = `Creating "${group.parent_title}"...`;
+      const parent = await api('POST', `/lists/${listId}/tasks`, { title: group.parent_title, notes: aiTag });
+      parentId = parent.id;
+      created++;
+    } catch(e) { errors++; continue; }
+
+    for (const sub of (group.subtasks || [])) {
+      try {
+        await api('POST', `/lists/${listId}/tasks?parent=${parentId}`, { title: sub.title, notes: aiTag });
+        created++;
+        if (sub.original_id) toDelete.add(sub.original_id);
+      } catch(e) { errors++; }
+    }
+  }
+
+  // Step 2: update standalone tasks (rewrite title + mark cleaned)
+  for (const k of (plan.keep || [])) {
+    if (!k.original_id) continue;
+    const orig = tasks.find(t => t.id === k.original_id);
+    if (!orig) continue;
+    const existingNotes = (orig.notes || '').replace(/\[ai:\d{4}-\d{2}-\d{2}\]\s*/g, '').trim();
+    const titleChanged = orig.title !== k.title;
+    const needsMark = !(orig.notes || '').includes('[ai:');
+    if (titleChanged || needsMark) {
+      try {
+        await api('PATCH', `/lists/${listId}/tasks/${k.original_id}`, {
+          title: k.title,
+          notes: aiTag + (existingNotes ? '\n' + existingNotes : '')
+        });
+      } catch(e) { /* non-fatal */ }
+    }
+  }
+
+  // Step 3: delete originals that were grouped (only after all new ones created)
+  let deleted = 0;
+  for (const id of toDelete) {
+    try {
+      await api('DELETE', `/lists/${listId}/tasks/${id}`);
+      deleted++;
+    } catch(e) { /* task may already be gone */ }
+  }
+
+  btn.textContent = `&#10003; Done — ${created} tasks organized, ${deleted} originals removed${errors ? `, ${errors} skipped` : ''}`;
+  await loadTasks();
+  setTimeout(() => {
+    btn.remove();
+    document.getElementById('aiResponse').textContent = `Done. ${created} tasks organized into groups. Originals removed. Run again weekly to stay clean.`;
+  }, 2500);
 }
 
 async function addExtractedTasks(text, btn) {
