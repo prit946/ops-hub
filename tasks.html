@@ -153,6 +153,31 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 
 /* Loading state */
 .loading-row{padding:20px;text-align:center;color:var(--mn);font-size:13px}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:6px;padding:7px 12px;background:var(--s1);border-bottom:1px solid var(--bd);overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-pill{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:none;color:var(--mn);white-space:nowrap;transition:.15s;flex-shrink:0}
+.filter-pill.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.filter-pill:hover:not(.active){border-color:var(--acc);color:var(--acc)}
+
+/* Edit task modal */
+.edit-modal textarea{width:100%;padding:8px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit;resize:vertical;min-height:64px}
+.edit-modal textarea:focus{outline:none;border-color:var(--acc)}
+.edit-modal input[type="date"]{color-scheme:dark light}
+
+/* Add task expanded */
+.add-date-row{display:flex;gap:8px;margin-top:8px}
+.add-date-input{flex:1;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;color:var(--tx);font-size:12px;font-family:inherit;color-scheme:dark light}
+.add-date-input:focus{outline:none;border-color:var(--acc)}
+
+/* Theme toggle */
+.theme-toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.theme-toggle input{opacity:0;width:0;height:0}
+.theme-slider{position:absolute;cursor:pointer;inset:0;background:var(--bd);border-radius:22px;transition:.2s}
+.theme-slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.theme-toggle input:checked + .theme-slider{background:var(--acc)}
+.theme-toggle input:checked + .theme-slider::before{transform:translateX(18px)}
 </style>
 </head>
 <body>
@@ -168,6 +193,14 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 
 <div class="list-tabs-wrap" id="listTabs">
   <div class="loading-row">Loading...</div>
+</div>
+
+<div class="filter-bar" id="filterBar" style="display:none">
+  <button class="filter-pill active" id="fp-all" onclick="setFilter('all')">All</button>
+  <button class="filter-pill" id="fp-today" onclick="setFilter('today')">Today</button>
+  <button class="filter-pill" id="fp-overdue" onclick="setFilter('overdue')">Overdue</button>
+  <button class="filter-pill" id="fp-upcoming" onclick="setFilter('upcoming')">Upcoming</button>
+  <button class="filter-pill" id="fp-nodate" onclick="setFilter('nodate')">No Date</button>
 </div>
 
 <div class="auth-screen" id="authScreen">
@@ -248,6 +281,15 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
       </div>
     </div>
 
+    <!-- Theme toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--bd);margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600">Light Mode</div>
+      <label class="theme-toggle">
+        <input type="checkbox" id="themeCheck" onchange="toggleTheme(this.checked)">
+        <span class="theme-slider"></span>
+      </label>
+    </div>
+
     <!-- What is this app -->
     <div style="margin-bottom:14px">
       <div class="modal-label" style="margin-bottom:8px">&#128221; What is this?</div>
@@ -284,6 +326,35 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   </div>
 </div>
 
+<!-- Edit Task Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal edit-modal" style="gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3>Edit Task</h3>
+      <button class="modal-cancel" style="padding:5px 10px" onclick="closeEdit()">&#10005;</button>
+    </div>
+    <div>
+      <div class="modal-label">Title</div>
+      <input id="editTitle" type="text" placeholder="Task title">
+    </div>
+    <div>
+      <div class="modal-label">Due Date</div>
+      <input id="editDue" type="date" style="width:100%;padding:8px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit;color-scheme:dark light">
+    </div>
+    <div>
+      <div class="modal-label">Notes</div>
+      <textarea id="editNotes" placeholder="Add notes..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEdit()">Cancel</button>
+      <button class="modal-save" onclick="saveEdit()">Save</button>
+    </div>
+    <div class="danger-zone" style="margin-top:0;padding-top:10px">
+      <button class="danger-btn" onclick="deleteEditTask()">&#128465; Delete Task</button>
+    </div>
+  </div>
+</div>
+
 <!-- New List Modal -->
 <div class="modal-overlay new-list-modal" id="newListModal">
   <div class="modal">
@@ -313,6 +384,8 @@ let currentListTitle = 'My Tasks';
 let taskLists = [];
 let tasks = [];
 let addingTask = false;
+let currentFilter = 'all';
+let editingTaskId = null;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -323,6 +396,12 @@ window.addEventListener('load', () => {
     navigator.serviceWorker.getRegistration().then(r => r && r.update());
   }
   localStorage.removeItem('pritos_tasks_client_id');
+  // Apply saved theme
+  if (localStorage.getItem('pritos_theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    const chk = document.getElementById('themeCheck');
+    if (chk) chk.checked = true;
+  }
 
   const saved = sessionStorage.getItem('pritos_tasks_token');
   const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
@@ -405,6 +484,7 @@ function onConnected() {
   document.getElementById('connStatus').textContent = 'Connected';
   document.getElementById('connStatus').className = 'hdr-status connected';
   document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('filterBar').style.display = 'flex';
   document.getElementById('taskList').style.display = '';
   document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   document.getElementById('actionBar').style.display = 'flex';
@@ -419,6 +499,7 @@ async function api(method, path, body) {
     sessionStorage.removeItem('pritos_tasks_token');
     sessionStorage.removeItem('pritos_tasks_exp');
     document.getElementById('taskList').style.display = 'none';
+    document.getElementById('filterBar').style.display = 'none';
     document.getElementById('authScreen').style.display = '';
     document.getElementById('actionBar').style.display = 'none';
     document.getElementById('connStatus').textContent = 'Not connected';
@@ -490,11 +571,6 @@ async function loadTasks() {
 
 function renderTasks() {
   const el = document.getElementById('taskList');
-  if (!tasks.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9989;</div><div class="empty-msg">No tasks. You're clear.<br><span style="font-size:12px">Tap + Add Task to get started.</span></div></div>`;
-    return;
-  }
-
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
 
@@ -508,24 +584,45 @@ function renderTasks() {
     else upcoming.push(t);
   });
 
+  // Apply filter
+  let showOverdue = true, showToday = true, showUpcoming = true, showNoDate = true, showDone = true;
+  if (currentFilter === 'today')    { showOverdue=false; showUpcoming=false; showNoDate=false; showDone=false; }
+  if (currentFilter === 'overdue')  { showToday=false; showUpcoming=false; showNoDate=false; showDone=false; }
+  if (currentFilter === 'upcoming') { showOverdue=false; showToday=false; showNoDate=false; showDone=false; }
+  if (currentFilter === 'nodate')   { showOverdue=false; showToday=false; showUpcoming=false; showDone=false; }
+
+  const visible = [
+    ...(showOverdue ? overdue : []),
+    ...(showToday ? dueToday : []),
+    ...(showUpcoming ? upcoming : []),
+    ...(showNoDate ? noDate : []),
+    ...(showDone ? done : []),
+  ];
+
+  if (!visible.length) {
+    const msg = currentFilter === 'all' ? 'No tasks. You\'re clear.' : `No ${currentFilter} tasks.`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9989;</div><div class="empty-msg">${msg}<br><span style="font-size:12px">Tap + Add Task to get started.</span></div></div>`;
+    return;
+  }
+
   let html = '';
-  if (overdue.length) {
+  if (showOverdue && overdue.length) {
     html += `<div class="section-label" style="color:var(--err)">Overdue (${overdue.length})</div>`;
     overdue.forEach(t => html += taskHTML(t));
   }
-  if (dueToday.length) {
+  if (showToday && dueToday.length) {
     html += `<div class="section-label" style="color:var(--warn)">Today</div>`;
     dueToday.forEach(t => html += taskHTML(t));
   }
-  if (upcoming.length) {
+  if (showUpcoming && upcoming.length) {
     html += `<div class="section-label">Upcoming</div>`;
     upcoming.forEach(t => html += taskHTML(t));
   }
-  if (noDate.length) {
+  if (showNoDate && noDate.length) {
     html += `<div class="section-label">No Date</div>`;
     noDate.forEach(t => html += taskHTML(t));
   }
-  if (done.length) {
+  if (showDone && done.length) {
     html += `<div class="section-label">Completed (${done.length})</div>`;
     done.forEach(t => html += taskHTML(t));
   }
@@ -543,7 +640,7 @@ function taskHTML(t) {
   const dueLbl = due.label ? `<span class="${dueClass}">${due.label}</span>` : '';
   return `<div class="${itemClass}" id="task-${t.id}">
     <div class="${checkClass}" onclick="toggleTask('${t.id}','${done?'needsAction':'completed'}')"></div>
-    <div class="task-body">
+    <div class="task-body" onclick="openEdit('${t.id}')" style="cursor:pointer">
       <div class="task-title">${escapedTitle}</div>
       ${dueLbl || escapedNotes ? `<div class="task-meta">${dueLbl}</div>${escapedNotes}` : ''}
     </div>
@@ -587,12 +684,90 @@ async function deleteTask(taskId) {
 
 async function refreshTasks() { await loadLists(); }
 
+// ─── Filter ───────────────────────────────────────────────────────────────────
+
+function setFilter(f) {
+  currentFilter = f;
+  ['all','today','overdue','upcoming','nodate'].forEach(k => {
+    document.getElementById('fp-' + k)?.classList.toggle('active', k === f);
+  });
+  renderTasks();
+}
+
+// ─── Edit Task ────────────────────────────────────────────────────────────────
+
+function openEdit(taskId) {
+  const t = tasks.find(t => t.id === taskId);
+  if (!t) return;
+  editingTaskId = taskId;
+  document.getElementById('editTitle').value = t.title || '';
+  document.getElementById('editNotes').value = t.notes || '';
+  if (t.due) {
+    document.getElementById('editDue').value = t.due.slice(0, 10);
+  } else {
+    document.getElementById('editDue').value = '';
+  }
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => document.getElementById('editTitle').focus(), 80);
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('open');
+  editingTaskId = null;
+}
+
+async function saveEdit() {
+  if (!editingTaskId) return;
+  const title = document.getElementById('editTitle').value.trim();
+  if (!title) return;
+  const dueVal = document.getElementById('editDue').value;
+  const notesVal = document.getElementById('editNotes').value.trim();
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const body = { title };
+  if (dueVal) body.due = new Date(dueVal).toISOString().replace(/T.*/, 'T00:00:00.000Z');
+  else body.due = null;
+  if (notesVal) body.notes = notesVal;
+  else body.notes = '';
+  try {
+    const updated = await api('PATCH', `/lists/${listId}/tasks/${editingTaskId}`, body);
+    const idx = tasks.findIndex(t => t.id === editingTaskId);
+    if (idx >= 0) tasks[idx] = { ...tasks[idx], ...updated };
+    closeEdit();
+    renderTasks();
+  } catch(e) { showErr(e.message); }
+}
+
+async function deleteEditTask() {
+  if (!editingTaskId) return;
+  const t = tasks.find(t => t.id === editingTaskId);
+  if (!confirm(`Delete "${t?.title || 'this task'}"?`)) return;
+  const id = editingTaskId;
+  closeEdit();
+  await deleteTask(id);
+}
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
+
+function toggleTheme(isLight) {
+  if (isLight) {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('pritos_theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('pritos_theme');
+  }
+}
+
 // ─── Add Task ─────────────────────────────────────────────────────────────────
 
 function startAddTask() {
   const bar = document.getElementById('actionBar');
   bar.innerHTML = `
     <input class="task-input" id="newTaskInput" placeholder="New task..." autofocus>
+    <div class="add-date-row">
+      <input class="add-date-input" id="newTaskDue" type="date" title="Due date">
+      <input class="add-date-input" id="newTaskNotes" type="text" placeholder="Notes (optional)" style="flex:2">
+    </div>
     <div class="input-row">
       <button class="cancel-btn" onclick="cancelAdd()">Cancel</button>
       <button class="save-btn" onclick="saveTask()">Add</button>
@@ -614,9 +789,14 @@ function cancelAdd() {
 async function saveTask() {
   const title = document.getElementById('newTaskInput')?.value?.trim();
   if (!title) return;
+  const dueVal = document.getElementById('newTaskDue')?.value;
+  const notesVal = document.getElementById('newTaskNotes')?.value?.trim();
   const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const body = { title };
+  if (dueVal) body.due = new Date(dueVal).toISOString().replace(/T.*/, 'T00:00:00.000Z');
+  if (notesVal) body.notes = notesVal;
   try {
-    const t = await api('POST', `/lists/${listId}/tasks`, { title });
+    const t = await api('POST', `/lists/${listId}/tasks`, body);
     tasks.unshift(t);
     cancelAdd();
     renderTasks();
@@ -749,6 +929,14 @@ For questions or analysis, respond with plain text.`;
       } catch(e) { /* plain text response */ }
     }
     resp.textContent = text;
+    if (isExtract && text) {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'save-btn';
+      addBtn.style.cssText = 'margin-top:10px;width:100%;padding:9px';
+      addBtn.textContent = '+ Add All Tasks to ' + currentListTitle;
+      addBtn.onclick = () => addExtractedTasks(text, addBtn);
+      resp.after(addBtn);
+    }
   } catch(e) {
     resp.classList.remove('loading');
     resp.textContent = 'AI error: ' + e.message;
@@ -809,11 +997,32 @@ async function executeAIAction(act, resp) {
   } catch(e) { resp.textContent = 'Failed: ' + e.message; }
 }
 
+async function addExtractedTasks(text, btn) {
+  const lines = text.split('\n')
+    .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
+    .filter(l => l.length > 2 && l.length < 300);
+  if (!lines.length) { showErr('No tasks found to add.'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  let added = 0;
+  for (const title of lines) {
+    try {
+      const t = await api('POST', `/lists/${listId}/tasks`, { title });
+      tasks.unshift(t);
+      added++;
+    } catch(e) { /* skip failed ones */ }
+  }
+  btn.textContent = `✓ Added ${added} task${added !== 1 ? 's' : ''}`;
+  renderTasks();
+  setTimeout(() => { btn.remove(); }, 3000);
+}
+
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 function openSettings() {
   const connected = accessToken && tokenExpiry > Date.now();
-  document.getElementById('settingsConnDot').style.background = connected ? 'var(--ok)' : 'var(--err)';
+  document.getElementById('settingsConnDot').style.background = connected ? 'var(--live)' : 'var(--err)';
   document.getElementById('settingsConnLabel').textContent = connected ? 'Connected to Google Tasks' : 'Not signed in to Google';
   document.getElementById('settingsModal').classList.add('open');
 }
