@@ -280,9 +280,11 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
       </div>
     </div>
     <div class="prompts-section">
-      <div class="prompts-label">Ask Anything</div>
+      <div class="prompts-label">Ask Anything &nbsp;<span style="font-weight:400;text-transform:none;font-size:10px;color:var(--mn)">tap &#128190; to save a prompt</span></div>
+      <div id="savedPromptsRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
       <div class="ai-free-row">
         <input class="ai-free-input" id="aiInput" placeholder="Ask AI about your tasks..." onkeydown="if(event.key==='Enter')sendAI()">
+        <button class="ai-send-btn" onclick="saveCurrentPrompt()" title="Save prompt" style="background:var(--s2);border:1px solid var(--bd);color:var(--mn);padding:9px 10px">&#128190;</button>
         <button class="ai-send-btn" onclick="sendAI()">Ask</button>
       </div>
     </div>
@@ -416,6 +418,7 @@ let tasks = [];
 let addingTask = false;
 let currentFilter = 'all';
 let editingTaskId = null;
+let orgRunning = false;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
@@ -894,11 +897,61 @@ function openAI() {
   document.getElementById('aiSheet').classList.add('open');
   document.getElementById('aiResponse').className = 'ai-response';
   document.getElementById('aiResponse').textContent = '';
+  // Remove any leftover apply/add buttons from previous session
+  let sib = document.getElementById('aiResponse').nextElementSibling;
+  while (sib && sib.tagName === 'BUTTON') { const n = sib.nextElementSibling; sib.remove(); sib = n; }
+  renderSavedPrompts();
 }
 
 function closeAI() {
   document.getElementById('sheetOverlay').classList.remove('open');
   document.getElementById('aiSheet').classList.remove('open');
+}
+
+// ─── Saved Prompts ─────────────────────────────────────────────────────────────
+
+function loadSavedPrompts() {
+  try { return JSON.parse(localStorage.getItem('pritos_prompts') || '[]'); }
+  catch(e) { return []; }
+}
+
+function renderSavedPrompts() {
+  const row = document.getElementById('savedPromptsRow');
+  if (!row) return;
+  const prompts = loadSavedPrompts();
+  if (!prompts.length) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  row.innerHTML = prompts.map((p, i) =>
+    `<div style="display:flex;align-items:center;gap:2px;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:3px 6px 3px 10px;max-width:200px">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--mx);font-size:11px" onclick="useSavedPrompt(${i})" title="${escHtml(p)}">${escHtml(p.length>32?p.slice(0,32)+'…':p)}</span>
+      <button onclick="deleteSavedPrompt(${i})" style="background:none;border:none;color:var(--mn);cursor:pointer;padding:0 3px;font-size:13px;line-height:1;flex-shrink:0">&#215;</button>
+    </div>`
+  ).join('');
+}
+
+function saveCurrentPrompt() {
+  const val = document.getElementById('aiInput')?.value?.trim();
+  if (!val) return;
+  const prompts = loadSavedPrompts();
+  if (prompts.includes(val)) { showErr('Already saved.'); return; }
+  if (prompts.length >= 8) prompts.shift();
+  prompts.push(val);
+  localStorage.setItem('pritos_prompts', JSON.stringify(prompts));
+  renderSavedPrompts();
+}
+
+function useSavedPrompt(idx) {
+  const p = loadSavedPrompts()[idx];
+  if (!p) return;
+  const input = document.getElementById('aiInput');
+  if (input) { input.value = p; input.focus(); }
+}
+
+function deleteSavedPrompt(idx) {
+  const prompts = loadSavedPrompts();
+  prompts.splice(idx, 1);
+  localStorage.setItem('pritos_prompts', JSON.stringify(prompts));
+  renderSavedPrompts();
 }
 
 const PROMPT_TEMPLATES = {
@@ -1061,14 +1114,18 @@ async function executeAIAction(act, resp) {
 // ─── Organize List ────────────────────────────────────────────────────────────
 
 async function organizeList() {
+  if (orgRunning) { showErr('Organize already running — wait for it to finish.'); return; }
   const activeTasks = tasks.filter(t => t.status !== 'completed' && !t.parent);
   if (!activeTasks.length) { showErr('No active tasks to organize.'); return; }
 
+  orgRunning = true;
   const resp = document.getElementById('aiResponse');
+  if (!resp) { orgRunning = false; return; }
   resp.className = 'ai-response visible loading';
   resp.textContent = 'Analyzing ' + activeTasks.length + ' tasks...';
-  // Remove any old apply button
-  resp.nextElementSibling?.tagName === 'BUTTON' && resp.nextElementSibling.remove();
+  // Remove any leftover buttons
+  let sib = resp.nextElementSibling;
+  while (sib && sib.tagName === 'BUTTON') { const n = sib.nextElementSibling; sib.remove(); sib = n; }
 
   const taskData = activeTasks.map(t => {
     const aiMatch = (t.notes || '').match(/\[ai:(\d{4}-\d{2}-\d{2})\]/);
@@ -1096,28 +1153,45 @@ RULES:
 RETURN ONLY this exact JSON (no markdown, no explanation):
 {"groups":[{"parent_title":"string","subtasks":[{"title":"string","original_id":"string"}]}],"keep":[{"title":"string","original_id":"string"}]}`;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 28000);
+
   try {
     const r = await fetch(CF, {
       method: 'POST',
+      signal: controller.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         action: 'gemini.ask', key: CF_KEY, prompt,
         system: 'You are a task organizer. Output ONLY valid JSON. No markdown fences, no explanation, no extra text. Just the JSON object starting with { and ending with }.'
       })
     });
+    clearTimeout(timeout);
     const data = await r.json();
     resp.classList.remove('loading');
-    if (data.error) { resp.textContent = 'AI error: ' + data.error; return; }
+    if (data.error) { resp.textContent = 'AI error: ' + data.error; orgRunning = false; return; }
 
     const raw = (data.text || data.answer || '').trim().replace(/^```json?\s*/i, '').replace(/```\s*$/,'').trim();
     let plan;
     try { plan = JSON.parse(raw); }
-    catch(e) { resp.textContent = 'AI returned unexpected format — try again.'; return; }
+    catch(e) { resp.textContent = 'AI returned unexpected format — try again.'; orgRunning = false; return; }
 
+    // Validate plan structure
+    if (!plan || typeof plan !== 'object') { resp.textContent = 'Invalid response — try again.'; orgRunning = false; return; }
+    plan.groups = Array.isArray(plan.groups) ? plan.groups : [];
+    plan.keep = Array.isArray(plan.keep) ? plan.keep : [];
+
+    orgRunning = false;
     showOrganizePreview(plan, resp);
   } catch(e) {
-    resp.classList.remove('loading');
-    resp.textContent = 'Error: ' + e.message;
+    clearTimeout(timeout);
+    orgRunning = false;
+    if (resp) {
+      resp.classList.remove('loading');
+      resp.textContent = e.name === 'AbortError'
+        ? 'Request timed out — check your connection and try again.'
+        : 'Error: ' + e.message;
+    }
   }
 }
 
