@@ -195,6 +195,15 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 .org-group-title{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--tx)}
 .org-subtask{font-size:12px;color:var(--mn);padding:3px 0 3px 10px;border-left:2px solid var(--acc);margin-top:3px;line-height:1.4}
 
+/* Prompt library cards */
+.plib-card{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;position:relative}
+.plib-label{font-size:10px;font-weight:700;color:var(--acc);letter-spacing:.5px;text-transform:uppercase}
+.plib-text{font-size:12px;color:var(--mx);line-height:1.5;padding-right:52px}
+.plib-text em{color:var(--warn);font-style:normal;font-weight:600}
+.plib-copy{position:absolute;top:10px;right:10px;padding:4px 10px;background:var(--acc);border:none;color:#fff;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.plib-copy:hover{background:var(--acc2)}
+.plib-copy.copied{background:var(--live)}
+
 /* Organize action button */
 .action-prompt-btn{width:100%;padding:9px 12px;border:1.5px solid var(--acc);border-radius:8px;background:rgba(139,92,246,.08);color:var(--acc);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;text-align:left;margin-bottom:6px}
 .action-prompt-btn:hover{background:var(--acc);color:#fff}
@@ -348,6 +357,62 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
         </div>
         <div>You can also type a custom request like <em>"add buy milk for tomorrow"</em> or <em>"delete all completed tasks"</em> — it takes action directly on your list.</div>
         <div style="color:var(--warn);font-size:11px">⚡ Powered by Gemini via the PritOS gateway. Requires internet.</div>
+      </div>
+    </div>
+
+    <!-- Prompt Library -->
+    <div style="margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:10px">&#128203; Prompt Library — tap Copy, paste into Ask Anything</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="promptLibrary">
+
+        <div class="plib-card">
+          <div class="plib-label">Organize Store 8181</div>
+          <div class="plib-text" id="pl0">Group all Store 8181 tasks together, rewrite titles to be direct and short (max 6 words), add as subtasks under one "Store 8181" parent task</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl0')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">Organize Claude / Tech Projects</div>
+          <div class="plib-text" id="pl1">Group all my Claude coding and tech project tasks by project name, rewrite titles direct, create a parent task per project with subtasks</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl1')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">Weekly Reset</div>
+          <div class="plib-text" id="pl2">It's the start of the week. Look at all my tasks. Tell me: what is overdue, what are my top 5 for this week, and what should I just delete. Short list, no explanation.</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl2')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">Brain Dump → Tasks (fill in blanks)</div>
+          <div class="plib-text" id="pl3">Convert this brain dump into clean tasks. Each task: action verb, max 6 words, no duplicates, no fluff. Brain dump: [paste your thoughts here]</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl3')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">ADHD — One Thing Right Now</div>
+          <div class="plib-text" id="pl4">I have ADHD and I'm overwhelmed. Look at my tasks and tell me the single ONE thing I should do right now. One task, one sentence reason. Nothing else.</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl4')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">Clean Up Wording</div>
+          <div class="plib-text" id="pl5">Rewrite every task title in this list. Rules: start with an action verb, max 6 words, no filler words like "need to" or "should", direct and specific. List the rewrites only.</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl5')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">Delete Candidates</div>
+          <div class="plib-text" id="pl6">Which tasks should I just delete? Look for tasks that are expired, irrelevant, never going to happen, or something I keep ignoring. Be ruthless. List only the ones to cut.</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl6')">Copy</button>
+        </div>
+
+        <div class="plib-card">
+          <div class="plib-label">Group by Topic (fill in topic)</div>
+          <div class="plib-text" id="pl7">Find all tasks related to [topic] and group them under one parent task called "[topic]". Rewrite each subtask title to be direct. Delete duplicates.</div>
+          <button class="plib-copy" onclick="copyPromptLib('pl7')">Copy</button>
+        </div>
+
       </div>
     </div>
 
@@ -1334,6 +1399,25 @@ async function addExtractedTasks(text, btn) {
 }
 
 // ─── Settings ─────────────────────────────────────────────────────────────────
+
+function copyPromptLib(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const text = el.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = el.parentElement.querySelector('.plib-copy');
+    if (!btn) return;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
 
 function openSettings() {
   const connected = accessToken && tokenExpiry > Date.now();
