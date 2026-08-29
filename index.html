@@ -235,6 +235,7 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 .pcat-brain{background:rgba(52,211,153,.12);color:var(--grn);border:1px solid rgba(52,211,153,.25)}
 .pcat-dev{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2)}
 .pcat-life{background:rgba(148,163,184,.1);color:var(--mn);border:1px solid var(--bd)}
+.pcat-kv{background:rgba(251,146,60,.12);color:#fb923c;border:1px solid rgba(251,146,60,.25)}
 .pcard-preview{font-size:10px;color:var(--mn);line-height:1.4;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
 .pcard-arr{font-size:14px;color:var(--mn);flex-shrink:0;transition:transform .2s}
 .pcard.open .pcard-arr{transform:rotate(90deg)}
@@ -416,7 +417,7 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
     </div>
     <div class="proj-body" id="body-drivecore">
       <div class="proj-links">
-        <a class="proj-link" href="drivecore.html">Open Tool</a>
+        <a class="proj-link" href="https://prit946.github.io/store8181-hub/drivecore.html" target="_blank">Open Tool</a>
         <a class="proj-link" href="https://github.com/prit946/ops-hub" target="_blank">ops-hub repo</a>
         <a class="proj-link" href="https://script.google.com/home/projects/1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf/edit" target="_blank">GAS Script</a>
       </div>
@@ -433,16 +434,16 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
   </div>
   <div class="proj-card blue">
     <div class="proj-hd" onclick="toggleProj('brainos')">
-      <div><div class="proj-name">🧠 BrainOS</div><div class="proj-sub">ADHD productivity app · Render.com</div></div>
+      <div><div class="proj-name">🧠 BrainOS</div><div class="proj-sub">ADHD productivity app · CF Worker + D1</div></div>
       <div style="display:flex;align-items:center;gap:8px"><span class="badge live">Live</span><span style="color:var(--mn);font-size:16px" id="arr-brainos">›</span></div>
     </div>
     <div class="proj-body" id="body-brainos">
       <div class="proj-links">
         <a class="proj-link" href="brain-os.html">Open App</a>
-        <a class="proj-link" href="https://github.com/prit946/brain-os" target="_blank">GitHub Repo</a>
+        <a class="proj-link" href="https://github.com/prit946/ops-hub" target="_blank">ops-hub repo</a>
       </div>
-      <div class="row"><span class="row-lbl">Host</span><span class="row-val">Render.com (free tier — cold start ~30s)</span></div>
-      <div class="row"><span class="row-lbl">Next</span><span class="row-val">Cloud deploy, persistent storage</span></div>
+      <div class="row"><span class="row-lbl">API</span><span class="row-val mono" style="font-size:10px">brain-os.prit946.workers.dev</span></div>
+      <div class="row"><span class="row-lbl">DB</span><span class="row-val">Cloudflare D1 — brain-os-db</span></div>
       <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
         <span class="proj-notes-lbl">Notes</span>
         <button class="save-note-btn" id="save-note-brainos" onclick="saveNote('brainos')">Save</button>
@@ -491,6 +492,16 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
       <textarea class="field" id="note-cfgateway" rows="2" placeholder="Notes…"></textarea>
     </div>
   </div>
+  <div class="s-hd" style="margin-top:18px">KV Project Contexts <span id="kv-proj-count" style="font-size:10px;font-weight:400;color:var(--mn);margin-left:6px"></span></div>
+  <div class="card" style="margin-bottom:6px">
+    <div class="card-body" style="padding:10px 12px;display:flex;gap:8px;align-items:center">
+      <button class="btn btn-s btn-sm" onclick="loadKvProjects()" style="flex:none">Refresh</button>
+      <span style="font-size:11px;color:var(--mn)">All contexts saved in CF Worker KV</span>
+      <a href="context.html" style="margin-left:auto;font-size:11px;color:var(--acc-l);text-decoration:none;font-weight:700">Full Hub →</a>
+    </div>
+  </div>
+  <div id="kv-proj-list"></div>
+
   <div class="s-hd">Add New Project</div>
   <div class="card">
     <div class="card-body">
@@ -917,7 +928,7 @@ function showTab(name){
   document.getElementById('tab-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   if(name==='home')loadHome();
-  if(name==='projects')loadProjectNotes();
+  if(name==='projects'){loadProjectNotes();loadKvProjects();}
   if(name==='infra')checkInfra();
   if(name==='settings')loadSettings();
   if(name==='prompts')initPrompts();
@@ -1099,8 +1110,59 @@ async function createProject(){
   const ctx=document.getElementById('new-proj-ctx').value.trim();
   if(!name)return toast('Enter a project name');
   const d=await gw({action:'context.set',name,context:ctx||'# '+name+'\n\nProject description here.'});
-  if(d.ok){toast('Project "'+name+'" created in KV ✓');document.getElementById('new-proj-name').value='';document.getElementById('new-proj-ctx').value='';}
+  if(d.ok){toast('Project "'+name+'" created in KV ✓');document.getElementById('new-proj-name').value='';document.getElementById('new-proj-ctx').value='';loadKvProjects();}
   else toast('Failed to create project');
+}
+
+async function loadKvProjects(){
+  const list=document.getElementById('kv-proj-list');
+  const count=document.getElementById('kv-proj-count');
+  if(!list)return;
+  list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">Loading…</div>';
+  const d=await gw({action:'context.list'}).catch(()=>({names:[]}));
+  const names=(d.names||[]).sort();
+  count.textContent=names.length?`(${names.length})`:'';
+  if(!names.length){list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">No KV contexts found.</div>';return;}
+  list.innerHTML='';
+  names.forEach(name=>{
+    const el=document.createElement('div');
+    el.className='proj-card';
+    el.style.cssText='margin-bottom:8px;border-radius:10px;overflow:hidden';
+    el.innerHTML=`
+      <div class="proj-hd" style="cursor:pointer" onclick="toggleKvEntry(this)">
+        <div><div class="proj-name" style="font-size:13px">${name}</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn btn-s btn-sm" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();editKvEntry('${name}')">Edit</button>
+          <span style="color:var(--mn);font-size:16px">›</span>
+        </div>
+      </div>
+      <div class="proj-body" id="kv-body-${name}" style="display:none">
+        <div style="font-size:11px;color:var(--mn);margin-bottom:6px">Loading…</div>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+async function toggleKvEntry(hd){
+  const body=hd.nextElementSibling;
+  const name=hd.querySelector('.proj-name').textContent;
+  if(body.style.display!=='none'){body.style.display='none';return;}
+  body.style.display='';
+  if(body.dataset.loaded)return;
+  body.dataset.loaded='1';
+  const d=await gw({action:'context.get',name}).catch(()=>({context:''}));
+  body.innerHTML=`<pre style="white-space:pre-wrap;word-break:break-word;font-size:10px;font-family:var(--mono);color:var(--fg);background:var(--bg2);padding:10px;border-radius:6px;margin:0;max-height:220px;overflow:auto">${escHtml2(d.context||'(empty)')}</pre>
+    <button class="btn btn-s btn-sm" style="margin-top:8px;font-size:10px" onclick="editKvEntry('${name}')">Edit in text area</button>`;
+}
+
+function escHtml2(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function editKvEntry(name){
+  const val=prompt('Edit KV context for "'+name+'" — this will overwrite. Leave blank to cancel.');
+  if(val===null||val==='')return;
+  const d=await gw({action:'context.set',name,context:val});
+  if(d.ok){toast('Saved "'+name+'" to KV ✓');loadKvProjects();}
+  else toast('Save failed');
 }
 
 // ── PWA SERVICE WORKER ────────────────────────────────
@@ -1559,11 +1621,113 @@ Tell me:
 3. One thing I actually finished that I'm probably not giving myself credit for
 
 Keep it short.`},
+
+  // KV CONTEXT
+  {cat:'kv',title:'Save Project Context to KV',preview:'End of session — push full context to CF Worker KV',
+   text:`Save this project's context to CF Worker KV so I can resume it in a future session.
+
+Project name (KV key): [e.g. brain-os, drivecore, store8181]
+Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+
+Generate the full context MD to save. Include:
+- What this project does (1–2 sentences)
+- Current status (Live / WIP / Paused)
+- Key URLs, IDs, credentials references (no plaintext secrets)
+- What was done today
+- Open items / next steps
+- Anything that would be confusing to re-derive from code alone
+
+Then push it:
+POST {"key":"Store8181Prit2026","action":"context.set","name":"[PROJECT-NAME]","context":"[MD CONTENT]"}
+
+Confirm with the response and tell me the KV key it was saved under.`},
+
+  {cat:'kv',title:'Update Existing KV Context',preview:'Append or merge new info into an existing KV file',
+   text:`Update the KV context for an existing project — don't overwrite, merge.
+
+Project KV key: [PROJECT-NAME]
+Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+
+Step 1 — fetch current:
+GET {"key":"Store8181Prit2026","action":"context.get","name":"[PROJECT-NAME]"}
+
+Step 2 — update these specific sections:
+[DESCRIBE WHAT CHANGED — e.g. "Status is now Live", "Add new URL", "Update open items"]
+
+Step 3 — push merged result back:
+POST {"key":"Store8181Prit2026","action":"context.set","name":"[PROJECT-NAME]","context":"[MERGED MD]"}
+
+Keep everything that was there. Only change what I listed above.`},
+
+  {cat:'kv',title:'Load Project Context from KV',preview:'Fetch a saved project context to resume work',
+   text:`Load the saved context for a project from KV so we can resume.
+
+Project KV key: [PROJECT-NAME]
+Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+
+Fetch it:
+GET {"key":"Store8181Prit2026","action":"context.get","name":"[PROJECT-NAME]"}
+
+After fetching:
+1. Summarize what the project is and where we left off
+2. List the open items / next steps
+3. Tell me what tools/URLs/IDs I'll need in this session
+4. Then ask what I want to work on`},
+
+  {cat:'kv',title:'List All KV Projects',preview:'See every project context saved in CF Worker KV',
+   text:`List all project contexts saved in CF Worker KV.
+
+Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+
+Fetch the list:
+POST {"key":"Store8181Prit2026","action":"context.list"}
+
+For each project found, show:
+- KV key name
+- First line of the context (the title/description)
+- Quick status if visible
+
+I want to see what's saved and decide if anything needs cleanup or updating.`},
+
+  {cat:'kv',title:'End of Session Checklist',preview:'Full end-of-session save: KV + memory + commit',
+   text:`End of session. Do all three:
+
+1. **KV context** — push updated project context for everything we worked on today:
+   POST {"key":"Store8181Prit2026","action":"context.set","name":"[PROJECT]","context":"[MD]"}
+   Include: what was done, current status, open items, any new IDs or URLs
+
+2. **Git** — confirm all changes are committed and pushed:
+   - Check git status in each repo we touched
+   - Commit anything uncommitted (describe what changed)
+   - Push to main
+
+3. **Memory** — flag anything that should be saved to a Claude memory file:
+   - New project facts that aren't in memory yet
+   - Updated status (e.g. "brain-os is now on CF Worker")
+   - Any feedback on how I want things done
+
+Then give me a 3-bullet summary of what was done today.`},
+
+  {cat:'kv',title:'Delete KV Context',preview:'Remove a project context from KV permanently',
+   text:`Delete a project context from CF Worker KV.
+
+Project KV key to delete: [PROJECT-NAME]
+Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+
+Before deleting:
+1. Fetch it so I can confirm it's the right one:
+   GET {"key":"Store8181Prit2026","action":"context.get","name":"[PROJECT-NAME]"}
+2. Show me the first 10 lines
+3. Confirm with me before deleting
+
+Then delete:
+POST {"key":"Store8181Prit2026","action":"context.delete","name":"[PROJECT-NAME]"}`},
 ];
 
 const CAT_META={
   all:   {label:'All',     cls:''},
   session:{label:'Sessions', cls:'pcat-session'},
+  kv:    {label:'KV / Context',cls:'pcat-kv'},
   drive:  {label:'DriveCore',cls:'pcat-drive'},
   store:  {label:'Store',    cls:'pcat-store'},
   brain:  {label:'Brain OS', cls:'pcat-brain'},
