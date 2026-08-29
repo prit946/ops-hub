@@ -214,6 +214,36 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 .set-badge.ok{background:rgba(52,211,153,.15);color:var(--grn);border:1px solid rgba(52,211,153,.25)}
 .set-badge.off{background:rgba(148,163,184,.1);color:var(--mn);border:1px solid var(--bd)}
 
+/* ── PROMPTS ── */
+.plib-search{width:100%;padding:9px 12px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);font-size:13px;font-family:var(--font);outline:none;margin-bottom:10px;transition:border-color .15s}
+.plib-search:focus{border-color:var(--acc)}
+.plib-search::placeholder{color:var(--mn)}
+.cat-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.cat-chip{background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:4px 11px;font-size:10px;font-weight:700;color:var(--mn);cursor:pointer;letter-spacing:.3px;text-transform:uppercase;transition:all .15s;white-space:nowrap}
+.cat-chip:hover{border-color:var(--bd2);color:var(--tx)}
+.cat-chip.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.pcard{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;overflow:hidden;transition:border-color .15s}
+.pcard:hover{border-color:var(--bd2)}
+.pcard-hd{padding:11px 13px;display:flex;align-items:flex-start;gap:8px;justify-content:space-between;cursor:pointer;user-select:none}
+.pcard-left{flex:1;min-width:0}
+.pcard-title{font-size:12px;font-weight:800;color:var(--tx);line-height:1.3}
+.pcard-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
+.pcat-pill{font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:1px 6px;border-radius:10px}
+.pcat-session{background:rgba(139,92,246,.15);color:var(--acc);border:1px solid rgba(139,92,246,.25)}
+.pcat-drive{background:rgba(96,165,250,.12);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
+.pcat-store{background:rgba(251,191,36,.12);color:var(--amb);border:1px solid rgba(251,191,36,.25)}
+.pcat-brain{background:rgba(52,211,153,.12);color:var(--grn);border:1px solid rgba(52,211,153,.25)}
+.pcat-dev{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+.pcat-life{background:rgba(148,163,184,.1);color:var(--mn);border:1px solid var(--bd)}
+.pcard-preview{font-size:10px;color:var(--mn);line-height:1.4;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:230px}
+.pcard-arr{font-size:14px;color:var(--mn);flex-shrink:0;transition:transform .2s}
+.pcard.open .pcard-arr{transform:rotate(90deg)}
+.pcard-body{display:none;padding:0 13px 13px}
+.pcard.open .pcard-body{display:block}
+.pcard-text{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r-sm);padding:10px 12px;font-size:11px;font-family:var(--mono);color:var(--mx);line-height:1.65;white-space:pre-wrap;word-break:break-word;margin-bottom:8px}
+.pcard-actions{display:flex;gap:6px;justify-content:flex-end}
+.plib-empty{text-align:center;color:var(--mn);font-size:12px;padding:32px 0}
+
 /* ── TOAST ── */
 #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--s2);color:var(--tx);padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;opacity:0;pointer-events:none;transition:all .22s;z-index:999;border:1px solid var(--bd);white-space:nowrap}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -692,6 +722,14 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 
 </section>
 
+<!-- ════ PROMPTS TAB ════ -->
+<section class="tab" id="tab-prompts">
+  <div class="s-hd" style="margin-top:6px">Prompt Library</div>
+  <input class="plib-search" id="plib-search" placeholder="Search prompts…" oninput="renderPrompts()" autocomplete="off" autocorrect="off" spellcheck="false">
+  <div class="cat-chips" id="cat-chips"></div>
+  <div id="plib-list"></div>
+</section>
+
 <!-- BOTTOM NAV -->
 <nav class="bnav">
   <button class="bnav-btn active" id="nav-home" onclick="showTab('home')">
@@ -711,6 +749,9 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
   </button>
   <button class="bnav-btn" id="nav-settings" onclick="showTab('settings')">
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+  </button>
+  <button class="bnav-btn" id="nav-prompts" onclick="showTab('prompts')">
+    <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/></svg>Prompts
   </button>
 </nav>
 
@@ -879,6 +920,7 @@ function showTab(name){
   if(name==='projects')loadProjectNotes();
   if(name==='infra')checkInfra();
   if(name==='settings')loadSettings();
+  if(name==='prompts')initPrompts();
 }
 
 // ── PROJECT EXPAND ────────────────────────────────────
@@ -1113,6 +1155,490 @@ function markSetupDone(id){
 function hardReload(){location.replace(location.href.split('?')[0]+'?v='+Date.now());}
 
 // ── INIT ─────────────────────────────────────────────
+document.getElementById('save-store-note').addEventListener('click',()=>saveNote('store'));
+loadNote('store');
+initPritosLock();
+loadHome();
+loadSetupChecklist();
+
+// ── PROMPT LIBRARY ────────────────────────────────────
+const PROMPTS=[
+  // SESSION STARTERS
+  {cat:'session',title:'Start DriveCore Session',preview:'Load DriveCore context and GAS gateway info',
+   text:`I'm working on DriveCore — the GAS-based Google Drive organizer.
+Stack:
+- GAS deployment: AKfycbyDxwq05PNbcEYSmu-MQyp4Q7cR3w9WKlhb9vJes0Ut4E7gTLI3oYV8fXYIPgGNT3xq
+- CF Worker gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+- gas.proxy format: {key, action:"gas.proxy", gasAction:"dc.xxx", params:{...}}
+- Current GAS version: check dc.ping via gateway
+
+Today's task: [DESCRIBE WHAT YOU NEED TO DO]`},
+
+  {cat:'session',title:'Start Store 8181 Session',preview:'Load UPS Store context, Z Report, gateway',
+   text:`I'm working on UPS Store #8181 tools.
+Stack:
+- Store hub: https://prit946.github.io/store8181-hub/
+- CF Worker gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+- ZReport_Tracker Sheet ID: 1OiU8cDWGvpJFIV2h89Oq6gWwfqkyso2GDmqzsrhqwxQ
+- GAS (ZBot): 1tar_JJO5Ca92EdKOW_f2VWyeiRIW-zngsYq7tU48dlNhOuVzIuvODaKT
+
+Today's task: [DESCRIBE WHAT YOU NEED TO DO]`},
+
+  {cat:'session',title:'Start Brain OS Session',preview:'Load Brain OS CF Worker + D1 context',
+   text:`I'm working on Brain OS — ADHD productivity app.
+Stack:
+- Frontend: https://prit946.github.io/ops-hub/brain-os.html
+- API (CF Worker): https://brain-os.prit946.workers.dev
+- Database: Cloudflare D1 (brain-os-db, ID: 41913783-af6d-4f7f-87eb-206078457646)
+- Repo: /Users/prit_m3/Projects/Claude/apps/brain-os/
+- worker.js = all API routes | migrations/0001_init.sql = schema
+
+Today's task: [DESCRIBE WHAT YOU NEED TO DO]`},
+
+  {cat:'session',title:'Start Biz Ops Session',preview:'Load prit-business-op Firebase app context',
+   text:`I'm working on Biz Ops — business operations dashboard.
+Stack:
+- URL: https://prit946.github.io/prit-business-op/
+- Repo: prit946/prit-business-op | Local: ~/Projects/Claude/apps/prit-business-op/
+- Firebase project: prit-business-op | Firestore rules: allow read, write: if true
+- Admin PIN: 1997 | Employee PIN: 0000 (default per employee)
+- Single HTML file — all logic inline
+
+Today's task: [DESCRIBE WHAT YOU NEED TO DO]`},
+
+  {cat:'session',title:'Start CF Worker Session',preview:'Load gateway worker context + KV/D1 setup',
+   text:`I'm working on the CF Worker gateway.
+Stack:
+- Worker: spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+- Account: prit946 | Script name: spring-sea-ac0a
+- KV namespace: PROJECT_CONTEXT (60ade1ee257d4639922d8460e7192015)
+- Local: ~/Projects/Claude/gateway-worker/
+
+Reminder: Python calls need User-Agent: curl/8.0 header.
+Gas proxy format: {key, action:"gas.proxy", gasAction:"dc.xxx", params:{...}}
+
+Today's task: [DESCRIBE WHAT YOU NEED TO DO]`},
+
+  {cat:'session',title:'Start PritOS / ops-hub Session',preview:'Load ops-hub repo context for hub edits',
+   text:`I'm working on PritOS — the ops-hub master dashboard.
+Stack:
+- URL: https://prit946.github.io/ops-hub/
+- Repo: prit946/ops-hub | Local: ~/Projects/Claude/ops-hub/
+- Single index.html — all tabs, styles, JS inline
+- Tabs: Home, Store, Projects, Tools, Infra, Settings, Prompts
+- Linked tools: Brain OS (brain-os.html), DriveCore → store8181-hub
+
+Today's task: [DESCRIBE WHAT YOU NEED TO DO]`},
+
+  // DRIVECORE
+  {cat:'drive',title:'Sort Inbox / Run DriveCore',preview:'Trigger dc.sortInbox via gateway, report results',
+   text:`Run dc.sortInbox via the CF Worker gateway and report what happened.
+Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+Payload: {"key":"Store8181Prit2026","action":"gas.proxy","gasAction":"dc.sortInbox","params":{"dryRun":false}}
+
+After running, tell me:
+1. How many files were moved and where
+2. How many went to 99_Please_Review (need manual decision)
+3. Any errors or conflicts`},
+
+  {cat:'drive',title:'Review Unclear Files',preview:'Help decide where 99_Please_Review files belong',
+   text:`I have files in 99_Please_Review that DriveCore couldn't classify. Help me decide where each belongs.
+
+My Drive structure:
+01_Business (UPS Store 8181) → Finance, HR, Admin, Mailboxes, Printing, Contracts, Forms, Training
+02_Real_Estate (Joelton property)
+03_Personal (Prit) → Finance, Health, Home, Personal Docs, Projects, Reference, Vehicles
+04_Family (Pravin) → Finance, Dairy Queen records
+05_Systems (Claude automations, AI Studio, scripts)
+06_Archive (old files, superseded docs)
+
+Files to sort: [LIST THE FILE NAMES]`},
+
+  {cat:'drive',title:'Add Routing Rule',preview:'Add a new DriveCore ROUTE_RULE for a file pattern',
+   text:`Add a new DriveCore routing rule. Here's what I need:
+
+File pattern to match: [e.g. "payroll", "staff schedule", "invoice"]
+Destination folder: [e.g. "01_Business/Store 8181/Finance"]
+Destination folder ID: [if you have it, otherwise DriveCore will find it]
+
+The rule goes in the ROUTE_RULES array in dcTaxonomy() in Code.js.
+After adding, redeploy GAS and bump the version number.`},
+
+  {cat:'drive',title:'Fix Misrouted File',preview:'Move a specific file that went to the wrong folder',
+   text:`DriveCore moved a file to the wrong folder. Help me fix it.
+
+File name: [FILE NAME]
+It went to: [WRONG FOLDER]
+It should be in: [CORRECT FOLDER]
+
+Options:
+1. Move it manually via Drive (I can do it)
+2. Move via dc.execute with a manual plan
+3. Add an exception rule so it never happens again
+
+Also — should we add a pattern to prevent this in future? What triggered the wrong route?`},
+
+  {cat:'drive',title:'Check GAS / DriveCore Status',preview:'Ping GAS, check version, verify CF Worker URL',
+   text:`Check the current state of DriveCore:
+1. Ping GAS: POST {"key":"Store8181Prit2026","action":"gas.proxy","gasAction":"dc.ping","params":{}} to https://spring-sea-ac0a.prit946.workers.dev
+2. What version is deployed?
+3. Is the CF Worker pointed at the right GAS deployment URL?
+4. When was the last manifest regenerated?
+
+If GAS returns HTML instead of JSON, open the GAS URL in Chrome to warm it up, wait 5s, retry.`},
+
+  // STORE 8181
+  {cat:'store',title:'Log Daily Z Report',preview:'Enter today\'s sales, CC, tax, cash, cash on hand',
+   text:`Log today's Z report for UPS Store #8181.
+
+Date: [DATE e.g. 8/29/2026]
+Sales: $[AMOUNT]
+CC: $[AMOUNT]
+Tax: $[AMOUNT]
+Cash: $[AMOUNT]
+Cash on Hand: $[AMOUNT]
+Submitted by: [NAME]
+Notes: [any notes or leave blank]
+
+Sheet: ZReport_Tracker | Raw Log tab
+Sheet ID: 1OiU8cDWGvpJFIV2h89Oq6gWwfqkyso2GDmqzsrhqwxQ`},
+
+  {cat:'store',title:'Check Missing Z Report Dates',preview:'Find which days are missing from this month',
+   text:`Check which dates are missing from the Z Report this month.
+Sheet ID: 1OiU8cDWGvpJFIV2h89Oq6gWwfqkyso2GDmqzsrhqwxQ
+Tab: Raw Log
+
+For each missing date, tell me:
+- Is it a weekend/holiday that might explain it?
+- What's the pattern (Mon–Fri missing = probably forgot)
+
+Use the ZBot GAS or CF Worker gateway to pull the data.`},
+
+  {cat:'store',title:'Build Employee Schedule',preview:'Create weekly or biweekly schedule for the store',
+   text:`Build an employee schedule for UPS Store #8181.
+
+Schedule type: [Weekly / Biweekly]
+Pay period start: [DATE]
+Store hours: [e.g. Mon–Fri 8am–6pm, Sat 9am–4pm]
+Employees: [LIST NAMES]
+Any constraints: [e.g. "Jatin can't work Thursdays", "need 2 people on Saturdays"]
+
+Output format:
+- Condensed text (9a–5p format)
+- Ready to copy/share via WhatsApp or iMessage`},
+
+  {cat:'store',title:'Monthly Store Review',preview:'Pull MTD sales, variance, summary for any month',
+   text:`Pull the monthly summary for Store 8181.
+
+Month: [e.g. August 2026]
+Sheet ID: 1OiU8cDWGvpJFIV2h89Oq6gWwfqkyso2GDmqzsrhqwxQ
+
+Tell me:
+- Total sales for the month
+- Total cash on hand vs actual cash
+- Variance (over/short)
+- Days logged vs expected business days
+- Anything unusual (big variance days, missing entries)`},
+
+  {cat:'store',title:'Royalty Calculation',preview:'Calculate monthly royalty for UPS franchise',
+   text:`Calculate the royalty for Store #8181.
+
+Month: [MONTH YEAR]
+Gross sales: $[AMOUNT]
+
+Royalty structure: [check royalty.html for current rates]
+URL: https://prit946.github.io/store8181-hub/royalty.html
+
+Calculate:
+1. Royalty amount due
+2. Ad fund contribution
+3. Total due to UPS
+4. Due date`},
+
+  // BRAIN OS
+  {cat:'brain',title:'Brain Dump — Full Sort',preview:'Dump everything, Claude sorts Today/Week/Later/Ignore',
+   text:`I need to do a brain dump. Sort everything below into: Today (max 3), This Week, Later, or Ignore (worries/non-tasks).
+
+Energy today: [Low / Medium / High]
+
+Everything on my mind:
+[DUMP IT ALL HERE — tasks, worries, ideas, random thoughts, half-baked plans, anything]
+
+Rules:
+- Today = only 3 max, must be concrete physical actions
+- Ignore = worries, vague anxiety, things that aren't real tasks
+- Later = real tasks but not this week
+- Flag ONE as the single next action (smallest physical step)`},
+
+  {cat:'brain',title:"I'm Stuck — One Micro-Action",preview:'Frozen? Get one tiny physical thing to do right now',
+   text:`I'm stuck and can't get started. Give me ONE micro-action I can do right now.
+
+My active tasks:
+[LIST YOUR TASKS]
+
+Rules:
+- One action only. Not a task — something physically smaller.
+- "Open the document" not "Write the report"
+- No encouragement, no list, no judgment
+- Under 12 words
+- Make it so easy it's almost embarrassing`},
+
+  {cat:'brain',title:'Weekly Wins Review',preview:'Warm summary of what got done this week',
+   text:`Here are the tasks I completed this week:
+[LIST COMPLETED TASKS]
+
+Write a 3-4 sentence warm summary of what I accomplished.
+Rules:
+- Be specific about what I did (not generic praise)
+- ADHD brains underestimate their output — fix that
+- Do NOT use the word "productivity"
+- No bullet points — flowing prose
+- Celebratory but not over the top`},
+
+  {cat:'brain',title:'Task Keeps Rolling Over',preview:'Help decide what to do with a stuck task',
+   text:`This task has been rolling over for [X] days/weeks: "[TASK TEXT]"
+
+Help me decide what to do with it. Three options:
+1. Reframe it — what would make it actually doable?
+2. Drop it permanently — is it even worth keeping?
+3. Keep it + add a note about the real block
+
+Be direct. What's actually going on here?`},
+
+  {cat:'brain',title:'Recurring Thought Check',preview:'Item keeps showing up in brain dumps — what to do',
+   text:`This keeps showing up in my brain dumps: "[ITEM]"
+
+Is it:
+- A real task (needs to actually happen)
+- A worry (anxiety disguised as a task)
+- Something to consciously drop (decide it's not happening)
+
+Give me a straight answer and one concrete next step.
+Under 55 words.`},
+
+  // DEV / AUTOMATION
+  {cat:'dev',title:'Debug CF Worker Error',preview:'Troubleshoot a gateway or Worker error',
+   text:`CF Worker returned an error. Help me debug.
+
+Worker URL: https://spring-sea-ac0a.prit946.workers.dev
+Key: Store8181Prit2026
+
+Request I sent:
+[PASTE THE JSON PAYLOAD]
+
+Response I got:
+[PASTE THE ERROR / RESPONSE]
+
+Expected behavior:
+[WHAT SHOULD HAVE HAPPENED]`},
+
+  {cat:'dev',title:'Push GAS Update',preview:'Deploy new code to the GAS gateway',
+   text:`Push a GAS update to production. Here's what changed:
+[DESCRIBE THE CHANGE]
+
+GAS info:
+- Script ID: 1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf
+- Current deployment: AKfycbyDxwq05PNbcEYSmu-MQyp4Q7cR3w9WKlhb9vJes0Ut4E7gTLI3oYV8fXYIPgGNT3xq
+- CF Worker URL in KV points to above
+
+Push flow: GET content → patch → PUT content → POST version → PUT deployment
+Bump version comment in the code (v[N] → v[N+1]) before pushing.`},
+
+  {cat:'dev',title:'Build New Automation',preview:'Spec a new CF Worker action or GAS function',
+   text:`I want to build a new automation.
+
+What it should do: [DESCRIBE IN PLAIN ENGLISH]
+
+Constraints:
+- Stack: CF Worker + D1/KV (preferred) or GAS (if it needs Google Workspace)
+- Keep it minimal — no frameworks, no npm packages unless absolutely needed
+- Must be callable via POST to https://spring-sea-ac0a.prit946.workers.dev
+
+Before writing code:
+1. Is there an existing action that already does this?
+2. What's the simplest possible implementation?
+3. Any edge cases I should know about?`},
+
+  {cat:'dev',title:'KV / D1 Data Pull',preview:'Read data from CF Worker KV or D1 database',
+   text:`Pull data from my CF Worker storage.
+
+Storage type: [KV / D1]
+What I need: [DESCRIBE WHAT DATA YOU WANT]
+
+If KV:
+- Gateway: https://spring-sea-ac0a.prit946.workers.dev | Key: Store8181Prit2026
+- KV key to read: [KEY NAME]
+- Action: context.get or similar
+
+If D1 (Brain OS):
+- Database: brain-os-db | ID: 41913783-af6d-4f7f-87eb-206078457646
+- Query: [WHAT DO YOU WANT TO SELECT?]`},
+
+  {cat:'dev',title:'GitHub Pages Deploy Issue',preview:'Debug a failed GitHub Pages or CI deploy',
+   text:`GitHub Pages deploy is failing / not showing changes.
+
+Repo: [REPO NAME e.g. prit946/ops-hub]
+Branch: main
+What changed: [DESCRIBE THE FILES YOU EDITED]
+Error (if any): [PASTE ERROR FROM ACTIONS LOG]
+
+Common causes to check:
+- .nojekyll missing (blocks non-Jekyll builds)
+- Large binary files
+- GitHub Actions workflow yml syntax error
+- Cache — try hard refresh (Cmd+Shift+R)`},
+
+  // LIFE OS
+  {cat:'life',title:'Weekly Planning Session',preview:'Plan the week — tasks, energy, commitments',
+   text:`Help me plan my week.
+
+Available time: [e.g. "Mon–Fri, 9am–6pm, but Tuesday is packed"]
+Energy level this week: [Low / Medium / High]
+Fixed commitments: [LIST ANYTHING THAT CAN'T MOVE]
+Open tasks: [PASTE YOUR TASK LIST]
+
+Output:
+- What I'm actually doing each day (be ruthless about what fits)
+- What gets bumped to next week
+- One thing I should protect time for but probably won't`},
+
+  {cat:'life',title:'Big Decision Framework',preview:'Think through a hard choice with clear criteria',
+   text:`I need to make a decision.
+
+Choice A: [OPTION A]
+Choice B: [OPTION B]
+(Add more options if needed)
+
+Context: [WHY IS THIS HARD? WHAT'S AT STAKE?]
+
+Evaluate each option on:
+1. Impact — what does this actually change long-term?
+2. Effort — what does it cost to do?
+3. Reversibility — how hard is it to undo?
+4. Alignment — does this match what I'm actually trying to build?
+
+Give me a clear recommendation, not a balanced "both are valid" answer.`},
+
+  {cat:'life',title:'Should I Build This?',preview:'Is it worth building or does something better exist?',
+   text:`I'm thinking about building: [DESCRIBE THE TOOL / AUTOMATION / APP]
+
+Before I build it, tell me:
+1. Does a better version already exist (open source, SaaS, free tier)?
+2. How long would it take to build vs configure an existing tool?
+3. Is this solving a real recurring problem or a one-time annoyance?
+4. If I build it — what's the minimum viable version that solves the core problem?
+
+Be honest. If an existing tool is better, say so. I don't need to build everything.`},
+
+  {cat:'life',title:"Overwhelmed — Cut the List",preview:'Too many tasks — cut ruthlessly to what matters',
+   text:`I have too many things. Help me cut this list.
+
+Here's everything I'm "supposed" to do:
+[PASTE YOUR FULL LIST]
+
+Rules for cutting:
+- If it's not happening this week, it goes to Later (not deleted, just honest)
+- Max 3 things for today
+- Be ruthless — most lists are 70% noise
+- Flag anything that keeps showing up but never gets done
+
+Output: a clean Today list, a honest This Week list, and what we're officially parking.`},
+
+  {cat:'life',title:'End of Day Wrap',preview:'Quick EOD — wins, tomorrow\'s first move',
+   text:`Quick end of day wrap.
+
+What I actually got done today:
+[LIST IT — even the small stuff counts]
+
+What's still open:
+[LIST UNFINISHED TASKS]
+
+Tell me:
+1. What I should start with tomorrow (one specific first action, not a task)
+2. Anything I should drop or that's clearly not happening
+3. One thing I actually finished that I'm probably not giving myself credit for
+
+Keep it short.`},
+];
+
+const CAT_META={
+  all:   {label:'All',     cls:''},
+  session:{label:'Sessions', cls:'pcat-session'},
+  drive:  {label:'DriveCore',cls:'pcat-drive'},
+  store:  {label:'Store',    cls:'pcat-store'},
+  brain:  {label:'Brain OS', cls:'pcat-brain'},
+  dev:    {label:'Dev',      cls:'pcat-dev'},
+  life:   {label:'Life OS',  cls:'pcat-life'},
+};
+
+let activePromptCat='all';
+let promptsInited=false;
+
+function initPrompts(){
+  if(promptsInited)return;
+  promptsInited=true;
+  // Build category chips
+  const chips=document.getElementById('cat-chips');
+  chips.innerHTML='';
+  Object.entries(CAT_META).forEach(([key,meta])=>{
+    const btn=document.createElement('button');
+    btn.className='cat-chip'+(key==='all'?' active':'');
+    btn.textContent=meta.label;
+    btn.onclick=()=>{
+      activePromptCat=key;
+      document.querySelectorAll('.cat-chip').forEach(c=>c.classList.remove('active'));
+      btn.classList.add('active');
+      renderPrompts();
+    };
+    chips.appendChild(btn);
+  });
+  renderPrompts();
+}
+
+function renderPrompts(){
+  const q=(document.getElementById('plib-search').value||'').toLowerCase().trim();
+  const list=document.getElementById('plib-list');
+  const filtered=PROMPTS.filter(p=>{
+    const catOk=activePromptCat==='all'||p.cat===activePromptCat;
+    const qOk=!q||(p.title.toLowerCase().includes(q)||p.preview.toLowerCase().includes(q)||p.text.toLowerCase().includes(q));
+    return catOk&&qOk;
+  });
+  if(!filtered.length){list.innerHTML='<div class="plib-empty">No prompts found.</div>';return;}
+  list.innerHTML='';
+  filtered.forEach((p,i)=>{
+    const meta=CAT_META[p.cat]||CAT_META.life;
+    const card=document.createElement('div');
+    card.className='pcard';
+    card.innerHTML=`
+      <div class="pcard-hd" onclick="togglePcard(this.parentElement)">
+        <div class="pcard-left">
+          <div class="pcard-title">${p.title}</div>
+          <div class="pcard-meta"><span class="pcat-pill ${meta.cls}">${meta.label}</span></div>
+          <div class="pcard-preview">${p.preview}</div>
+        </div>
+        <span class="pcard-arr">›</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-text">${escHtml(p.text)}</div>
+        <div class="pcard-actions">
+          <button class="btn btn-s btn-sm" onclick="copyPromptText(this,${JSON.stringify(p.text)})">Copy</button>
+        </div>
+      </div>`;
+    list.appendChild(card);
+  });
+}
+
+function togglePcard(card){card.classList.toggle('open');}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function copyPromptText(btn,text){
+  navigator.clipboard.writeText(text).then(()=>{
+    const o=btn.textContent;btn.textContent='Copied!';
+    setTimeout(()=>btn.textContent=o,1800);
+  }).catch(()=>toast('Copy failed'));
+}
+
 document.getElementById('save-store-note').addEventListener('click',()=>saveNote('store'));
 loadNote('store');
 initPritosLock();
