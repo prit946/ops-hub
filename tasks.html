@@ -913,9 +913,26 @@ function closeAI() {
 
 // ─── Saved Prompts ─────────────────────────────────────────────────────────────
 
+const DEFAULT_PROMPTS = [
+  'Clean up all Store 8181 tasks — group by topic, rewrite titles direct and short',
+  'Group all my Claude and tech project tasks together by project',
+  'Which tasks have I been avoiding? Be blunt about what I need to just do',
+  'Merge any duplicate or similar tasks on this list and rewrite them clean',
+  'I have ADHD — what is the ONE thing I need to do right now and why',
+  'Which tasks on this list are not actually urgent and can wait a week',
+  'Clean up my wording on all tasks — imperative verbs, no fluff, max 6 words each',
+  'What is blocking me from finishing the most important task on this list',
+];
+
 function loadSavedPrompts() {
-  try { return JSON.parse(localStorage.getItem('pritos_prompts') || '[]'); }
-  catch(e) { return []; }
+  try {
+    // Seed defaults on first use
+    if (localStorage.getItem('pritos_prompts') === null) {
+      localStorage.setItem('pritos_prompts', JSON.stringify(DEFAULT_PROMPTS));
+    }
+    return JSON.parse(localStorage.getItem('pritos_prompts') || '[]');
+  }
+  catch(e) { return [...DEFAULT_PROMPTS]; }
 }
 
 function renderSavedPrompts() {

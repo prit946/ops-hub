@@ -1,4 +1,4 @@
-const CACHE = 'pritos-v10';
+const CACHE = 'pritos-v11';
 
 self.addEventListener('install', e => {
   e.waitUntil(self.skipWaiting());
