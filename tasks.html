@@ -2,10 +2,13 @@
 <html lang="en">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<script src="https://accounts.google.com/gsi/client" async defer onload="window._gisReady=true;if(window._gisQ)window._gisQ()"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tasks — PritOS</title>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="manifest" href="tasks-manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 :root {
   --bg:#0f1117;--s1:#161b27;--s2:#1e2535;--bd:#2a3247;
@@ -153,6 +156,57 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 
 /* Loading state */
 .loading-row{padding:20px;text-align:center;color:var(--mn);font-size:13px}
+
+/* Filter bar */
+.filter-bar{display:flex;gap:6px;padding:7px 12px;background:var(--s1);border-bottom:1px solid var(--bd);overflow-x:auto;flex-shrink:0;-webkit-overflow-scrolling:touch}
+.filter-bar::-webkit-scrollbar{display:none}
+.filter-pill{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--bd);background:none;color:var(--mn);white-space:nowrap;transition:.15s;flex-shrink:0}
+.filter-pill.active{background:var(--acc);border-color:var(--acc);color:#fff}
+.filter-pill:hover:not(.active){border-color:var(--acc);color:var(--acc)}
+
+/* Edit task modal */
+.edit-modal textarea{width:100%;padding:8px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit;resize:vertical;min-height:64px}
+.edit-modal textarea:focus{outline:none;border-color:var(--acc)}
+.edit-modal input[type="date"]{color-scheme:dark light}
+
+/* Add task expanded */
+.add-date-row{display:flex;gap:8px;margin-top:8px}
+.add-date-input{flex:1;padding:8px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;color:var(--tx);font-size:12px;font-family:inherit;color-scheme:dark light}
+.add-date-input:focus{outline:none;border-color:var(--acc)}
+
+/* Subtask indentation */
+.task-group{border-bottom:1px solid var(--bd)}
+.task-group>.task-item{border-bottom:1px solid var(--bd)}
+.subtask-row{display:flex;align-items:flex-start;gap:10px;padding:7px 16px 7px 40px;border-bottom:1px solid var(--bd);background:var(--bg);transition:.1s}
+.subtask-row:last-child{border-bottom:none}
+.subtask-row:hover{background:var(--s2)}
+.subtask-check{width:14px;height:14px;border:1.5px solid var(--bd);border-radius:3px;flex-shrink:0;cursor:pointer;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.subtask-check:hover{border-color:var(--acc)}
+.subtask-check.checked{background:var(--live);border-color:var(--live)}
+.subtask-check.checked::after{content:'✓';font-size:8px;color:#fff;font-weight:700}
+.subtask-title{font-size:13px;color:var(--mx);flex:1;cursor:pointer;line-height:1.4}
+.subtask-title.done{text-decoration:line-through;color:var(--done)}
+.subtask-del{background:none;border:none;color:var(--mn);cursor:pointer;padding:2px 5px;border-radius:4px;font-size:13px;opacity:0;transition:.15s;flex-shrink:0}
+.subtask-row:hover .subtask-del{opacity:1}
+.subtask-del:hover{color:var(--err)}
+
+/* Org preview */
+.org-group{background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:8px}
+.org-group-title{font-size:13px;font-weight:700;margin-bottom:6px;color:var(--tx)}
+.org-subtask{font-size:12px;color:var(--mn);padding:3px 0 3px 10px;border-left:2px solid var(--acc);margin-top:3px;line-height:1.4}
+
+/* Organize action button */
+.action-prompt-btn{width:100%;padding:9px 12px;border:1.5px solid var(--acc);border-radius:8px;background:rgba(139,92,246,.08);color:var(--acc);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s;text-align:left;margin-bottom:6px}
+.action-prompt-btn:hover{background:var(--acc);color:#fff}
+.action-prompt-btn:active{opacity:.85}
+
+/* Theme toggle */
+.theme-toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.theme-toggle input{opacity:0;width:0;height:0}
+.theme-slider{position:absolute;cursor:pointer;inset:0;background:var(--bd);border-radius:22px;transition:.2s}
+.theme-slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.theme-toggle input:checked + .theme-slider{background:var(--acc)}
+.theme-toggle input:checked + .theme-slider::before{transform:translateX(18px)}
 </style>
 </head>
 <body>
@@ -162,6 +216,7 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   <span class="hdr-title">Tasks</span>
   <span class="hdr-status" id="connStatus">Not connected</span>
   <button class="icon-btn" onclick="refreshTasks()" title="Refresh">&#8635;</button>
+  <button class="icon-btn" id="delListBtn" onclick="deleteCurrentList()" title="Delete this list" style="color:var(--err);border-color:var(--err);display:none">&#128465;</button>
   <button class="icon-btn" onclick="openSettings()" title="Settings">&#9881;</button>
 </div>
 
@@ -169,24 +224,25 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   <div class="loading-row">Loading...</div>
 </div>
 
-<div class="tasks-scroll" id="taskList">
-  <div class="auth-screen" id="authScreen">
-    <div class="auth-icon">&#10003;</div>
-    <div class="auth-title">Tasks</div>
-    <div class="auth-sub">Paste your Google access token to connect instantly — no setup needed.</div>
-    <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">
-      <input id="pasteTokenInput" style="width:100%;padding:10px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:13px;font-family:inherit;text-align:center" placeholder="Paste access token here...">
-      <button class="auth-connect" onclick="connectWithPastedToken()">Connect</button>
-    </div>
-    <div style="margin-top:16px;font-size:12px;color:var(--mn);text-align:center;line-height:1.8">
-      Get a token in 60 seconds:<br>
-      1. Open <a href="https://developers.google.com/oauthplayground/" target="_blank" style="color:var(--acc)">OAuth Playground</a><br>
-      2. Search <strong style="color:var(--tx)">Tasks API v1</strong> → select scope → Authorize<br>
-      3. Click <strong style="color:var(--tx)">Exchange authorization code for tokens</strong><br>
-      4. Copy <strong style="color:var(--tx)">Access token</strong> → paste above
-    </div>
+<div class="filter-bar" id="filterBar" style="display:none">
+  <button class="filter-pill active" id="fp-all" onclick="setFilter('all')">All</button>
+  <button class="filter-pill" id="fp-today" onclick="setFilter('today')">Today</button>
+  <button class="filter-pill" id="fp-overdue" onclick="setFilter('overdue')">Overdue</button>
+  <button class="filter-pill" id="fp-upcoming" onclick="setFilter('upcoming')">Upcoming</button>
+  <button class="filter-pill" id="fp-nodate" onclick="setFilter('nodate')">No Date</button>
+</div>
+
+<div class="auth-screen" id="authScreen">
+  <div class="auth-icon">&#10003;</div>
+  <div class="auth-title">Tasks</div>
+  <div class="auth-sub">Connect your Google account to get started.</div>
+  <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px">
+    <button class="auth-connect" onclick="connectGoogle()" style="background:var(--acc);border-color:var(--acc);color:#fff;font-size:15px;padding:13px">
+      Sign in with Google
+    </button>
   </div>
 </div>
+<div class="tasks-scroll" id="taskList" style="display:none"></div>
 
 <div class="action-bar" id="actionBar" style="display:none">
   <button class="ai-btn" onclick="openAI()">&#10024; AI Assist</button>
@@ -203,29 +259,35 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
   </div>
   <div class="sheet-body">
     <div class="prompts-section">
-      <div class="prompts-label">Quick Actions</div>
+      <div class="prompts-label" style="color:var(--acc);margin-bottom:8px">&#9889; Actions — edits your tasks</div>
+      <button class="action-prompt-btn" onclick="organizeList()">&#129529; Organize + Group This List</button>
+      <button class="action-prompt-btn" onclick="runPrompt('daily3')">&#127919; Pick My Daily 3 — add to Today list</button>
+    </div>
+    <div class="prompts-section">
+      <div class="prompts-label">Analysis</div>
       <div class="prompts-grid">
-        <button class="prompt-btn" onclick="runPrompt('prioritize')">&#128293; Prioritize my tasks</button>
-        <button class="prompt-btn" onclick="runPrompt('focus')">&#127919; What to focus on now?</button>
+        <button class="prompt-btn" onclick="runPrompt('prioritize')">&#128293; Prioritize</button>
+        <button class="prompt-btn" onclick="runPrompt('focus')">&#127349; Focus now</button>
         <button class="prompt-btn" onclick="runPrompt('overdue')">&#128680; What&#8217;s overdue?</button>
-        <button class="prompt-btn" onclick="runPrompt('skip')">&#128465; What can I skip?</button>
-        <button class="prompt-btn" onclick="runPrompt('group')">&#128193; Group similar tasks</button>
-        <button class="prompt-btn" onclick="runPrompt('workload')">&#128202; Summarize my workload</button>
-        <button class="prompt-btn" onclick="runPrompt('today')">&#9200; Today&#8217;s game plan</button>
-        <button class="prompt-btn" onclick="runPrompt('done')">&#9989; What did I accomplish?</button>
+        <button class="prompt-btn" onclick="runPrompt('skip')">&#128465; What to skip?</button>
+        <button class="prompt-btn" onclick="runPrompt('workload')">&#128202; Workload check</button>
+        <button class="prompt-btn" onclick="runPrompt('today')">&#9200; Game plan</button>
+        <button class="prompt-btn" onclick="runPrompt('done')">&#9989; Wins</button>
       </div>
     </div>
     <div class="prompts-section">
-      <div class="prompts-label">Add Task from Note</div>
+      <div class="prompts-label">&#129504; Brain Dump — paste anything, AI converts to tasks</div>
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input class="ai-free-input" id="noteInput" placeholder="Paste a note, email snippet, or idea..." style="flex:1">
+        <input class="ai-free-input" id="noteInput" placeholder="Type or paste random thoughts, notes, ideas..." style="flex:1">
         <button class="ai-send-btn" onclick="extractTasks()">Extract</button>
       </div>
     </div>
     <div class="prompts-section">
-      <div class="prompts-label">Ask Anything</div>
+      <div class="prompts-label">Ask Anything &nbsp;<span style="font-weight:400;text-transform:none;font-size:10px;color:var(--mn)">tap &#128190; to save a prompt</span></div>
+      <div id="savedPromptsRow" style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
       <div class="ai-free-row">
-        <input class="ai-free-input" id="aiInput" placeholder="Ask AI about your tasks...">
+        <input class="ai-free-input" id="aiInput" placeholder="Ask AI about your tasks..." onkeydown="if(event.key==='Enter')sendAI()">
+        <button class="ai-send-btn" onclick="saveCurrentPrompt()" title="Save prompt" style="background:var(--s2);border:1px solid var(--bd);color:var(--mn);padding:9px 10px">&#128190;</button>
         <button class="ai-send-btn" onclick="sendAI()">Ask</button>
       </div>
     </div>
@@ -235,25 +297,95 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 
 <!-- Settings Modal -->
 <div class="modal-overlay" id="settingsModal">
-  <div class="modal">
-    <h3>&#9881; Settings</h3>
-    <div>
-      <div class="modal-label">Google OAuth Client ID</div>
-      <input id="clientIdInput" type="text" placeholder="xxxxxxxxx.apps.googleusercontent.com">
-      <div class="modal-hint" style="margin-top:6px">
-        Create a free OAuth client at <a href="https://console.cloud.google.com/apis/credentials" target="_blank">console.cloud.google.com</a>.<br>
-        Type: <strong>Web application</strong>.<br>
-        Add <strong>https://prit946.github.io</strong> as an authorized JavaScript origin.<br>
-        Scopes needed: <code>tasks</code>
+  <div class="modal" style="max-height:85dvh;overflow-y:auto;gap:0">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="font-size:16px">&#9881; Settings</h3>
+      <button class="modal-cancel" style="padding:5px 10px" onclick="closeSettings()">&#10005;</button>
+    </div>
+
+    <!-- Status -->
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:8px">Connection Status</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span id="settingsConnDot" style="width:8px;height:8px;border-radius:50%;background:var(--err);flex-shrink:0"></span>
+        <span id="settingsConnLabel" style="font-size:13px;font-weight:600">Not signed in to Google</span>
+      </div>
+      <div style="font-size:11px;color:var(--mn);line-height:1.5">
+        Sign in so the app can read and update your Google Tasks. Your tasks never leave your device — the app talks directly to Google.
       </div>
     </div>
-    <div class="modal-actions">
-      <button class="modal-cancel" onclick="closeSettings()">Cancel</button>
-      <button class="modal-save" onclick="saveSettings()">Save</button>
+
+    <!-- Theme toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 2px;border-bottom:1px solid var(--bd);margin-bottom:14px">
+      <div style="font-size:13px;font-weight:600">Light Mode</div>
+      <label class="theme-toggle">
+        <input type="checkbox" id="themeCheck" onchange="toggleTheme(this.checked)">
+        <span class="theme-slider"></span>
+      </label>
     </div>
-    <div class="danger-zone">
+
+    <!-- What is this app -->
+    <div style="margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:8px">&#128221; What is this?</div>
+      <div style="font-size:12px;color:var(--mn);line-height:1.6;background:var(--s2);border-radius:8px;padding:12px;border:1px solid var(--bd)">
+        A fast, mobile-first Google Tasks app built into PritOS. Works as a PWA — add it to your home screen and it opens like a native app. Your task lists sync with Google Tasks, so anything you add here shows up in Google Tasks everywhere else too.
+      </div>
+    </div>
+
+    <!-- AI Assist -->
+    <div style="margin-bottom:14px">
+      <div class="modal-label" style="margin-bottom:8px">&#10024; AI Assist — What it does</div>
+      <div style="font-size:12px;color:var(--mn);line-height:1.6;background:var(--s2);border-radius:8px;padding:12px;border:1px solid var(--bd);display:flex;flex-direction:column;gap:8px">
+        <div>Tap <strong style="color:var(--tx)">AI Assist</strong> at the bottom to open the AI panel. It reads your current task list and can:</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Prioritize</strong> — ranks what matters most right now</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Focus</strong> — picks one thing to do next</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Overdue</strong> — flags what's past due</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Skip</strong> — suggests low-value tasks to drop</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Group</strong> — clusters similar tasks together</div>
+          <div style="background:var(--bg);border-radius:6px;padding:7px 9px;font-size:11px"><strong style="color:var(--tx)">Game plan</strong> — builds today's schedule</div>
+        </div>
+        <div>You can also type a custom request like <em>"add buy milk for tomorrow"</em> or <em>"delete all completed tasks"</em> — it takes action directly on your list.</div>
+        <div style="color:var(--warn);font-size:11px">⚡ Powered by Gemini via the PritOS gateway. Requires internet.</div>
+      </div>
+    </div>
+
+    <!-- Force refresh -->
+    <div class="danger-zone" style="border-color:var(--bd)">
+      <button class="danger-btn" style="border-color:var(--bd);color:var(--mn)" onclick="hardReload()">&#128260; Force Refresh (clear cache)</button>
       <button class="danger-btn" onclick="disconnectGoogle()">&#128274; Disconnect Google</button>
       <button class="danger-btn" onclick="nukeAllTasks()">&#128165; Nuke All Tasks</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit Task Modal -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal edit-modal" style="gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3>Edit Task</h3>
+      <button class="modal-cancel" style="padding:5px 10px" onclick="closeEdit()">&#10005;</button>
+    </div>
+    <div>
+      <div class="modal-label">Title</div>
+      <input id="editTitle" type="text" placeholder="Task title">
+    </div>
+    <div>
+      <div class="modal-label">Due Date</div>
+      <input id="editDue" type="date" style="width:100%;padding:8px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:13px;font-family:inherit;color-scheme:dark light">
+    </div>
+    <div>
+      <div class="modal-label">Notes</div>
+      <textarea id="editNotes" placeholder="Add notes..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeEdit()">Cancel</button>
+      <button class="modal-save" onclick="saveEdit()">Save</button>
+    </div>
+    <div class="danger-zone" style="margin-top:0;padding-top:10px">
+      <button class="danger-btn" onclick="deleteEditTask()">&#128465; Delete Task</button>
     </div>
   </div>
 </div>
@@ -277,108 +409,140 @@ body{background:var(--bg);color:var(--tx);font-family:var(--font);font-size:14px
 const CF = 'https://spring-sea-ac0a.prit946.workers.dev';
 const CF_KEY = 'Store8181Prit2026';
 const TASKS_BASE = 'https://tasks.googleapis.com/tasks/v1';
-const STORAGE_KEY = 'pritos_tasks_client_id';
+const CLIENT_ID = '24271192757-qkecvjnu05hh6c1vusa2cu275ncp0gah.apps.googleusercontent.com';
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/tasks';
 
 let accessToken = null;
 let tokenExpiry = 0;
-let tokenClient = null;
 let currentListId = '@default';
 let currentListTitle = 'My Tasks';
 let taskLists = [];
 let tasks = [];
 let addingTask = false;
+let currentFilter = 'all';
+let editingTaskId = null;
+let orgRunning = false;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
+let tokenClient = null;
+
 window.addEventListener('load', () => {
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) document.getElementById('clientIdInput').value = saved;
-  const token = sessionStorage.getItem('pritos_tasks_token');
-  const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
-  if (token && Date.now() < exp) {
-    accessToken = token;
-    tokenExpiry = exp;
-    onConnected();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistration().then(r => r && r.update());
   }
-  // Wait for GIS to load
-  window.onGISLoaded = initGIS;
-  if (window.google?.accounts) initGIS();
+  localStorage.removeItem('pritos_tasks_client_id');
+  // Apply saved theme
+  if (localStorage.getItem('pritos_theme') === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    const chk = document.getElementById('themeCheck');
+    if (chk) chk.checked = true;
+  }
+
+  const saved = sessionStorage.getItem('pritos_tasks_token');
+  const exp = parseInt(sessionStorage.getItem('pritos_tasks_exp') || '0');
+  if (saved && Date.now() < exp) {
+    accessToken = saved;
+    tokenExpiry = exp;
+    initGIS();
+    onConnected();
+    return;
+  }
+
+  initGIS();
 });
 
 function initGIS() {
-  const clientId = getClientId();
-  if (!clientId) return;
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: clientId,
-    scope: 'https://www.googleapis.com/auth/tasks',
-    callback: (resp) => {
-      if (resp.error) { showErr('Auth error: ' + resp.error); return; }
-      accessToken = resp.access_token;
-      tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
-      sessionStorage.setItem('pritos_tasks_token', accessToken);
-      sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
-      onConnected();
-    }
-  });
-  // Auto-connect if we have a client ID and no active token
-  if (!accessToken) {
-    const authScreen = document.getElementById('authScreen');
-    authScreen.style.display = '';
-  }
-}
-
-// GIS calls this when library loads
-window.onload_gsi = () => { if (!tokenClient) initGIS(); };
-
-function getClientId() {
-  return localStorage.getItem(STORAGE_KEY) || '';
-}
-
-function connectWithPastedToken() {
-  const token = document.getElementById('pasteTokenInput').value.trim();
-  if (!token) { showErr('Paste a token first'); return; }
-  accessToken = token;
-  tokenExpiry = Date.now() + 55 * 60 * 1000; // treat as 55min
-  sessionStorage.setItem('pritos_tasks_token', accessToken);
-  sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
-  onConnected();
+  const ready = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: GOOGLE_SCOPES,
+      callback: (resp) => {
+        if (resp.error) {
+          showErr('Sign-in failed: ' + resp.error);
+          document.getElementById('authScreen').style.display = '';
+          return;
+        }
+        accessToken = resp.access_token;
+        tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+        sessionStorage.setItem('pritos_tasks_token', accessToken);
+        sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
+        onConnected();
+      },
+      error_callback: (err) => {
+        if (err.type === 'popup_failed_to_open') {
+          showErr('Popup blocked — allow popups for this site in Chrome and try again.');
+        } else {
+          showErr('Auth error: ' + err.type);
+        }
+        document.getElementById('authScreen').style.display = '';
+      }
+    });
+  };
+  if (window._gisReady) ready();
+  else window._gisQ = ready;
 }
 
 function connectGoogle() {
-  const clientId = getClientId();
-  if (!clientId) { openSettings(); return; }
-  if (!tokenClient) { showErr('GIS not loaded yet. Refresh the page.'); return; }
-  tokenClient.requestAccessToken({ prompt: '' });
+  if (!tokenClient) { showErr('Still loading — try again in a second.'); return; }
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
 }
 
 async function ensureToken() {
   if (accessToken && Date.now() < tokenExpiry) return true;
   if (!tokenClient) return false;
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
+    let settled = false;
+    const finish = (ok) => {
+      if (settled) return;
+      settled = true;
+      tokenClient.callback = prevCb;
+      tokenClient.error_callback = prevErr;
+      resolve(ok);
+    };
+    const prevCb = tokenClient.callback;
+    const prevErr = tokenClient.error_callback;
     tokenClient.callback = (resp) => {
-      if (resp.error) { resolve(false); return; }
+      if (resp.error) { finish(false); return; }
       accessToken = resp.access_token;
       tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
       sessionStorage.setItem('pritos_tasks_token', accessToken);
-      sessionStorage.setItem('pritos_tasks_exp', tokenExpiry);
-      resolve(true);
+      sessionStorage.setItem('pritos_tasks_exp', String(tokenExpiry));
+      finish(true);
     };
-    tokenClient.requestAccessToken({ prompt: '' });
+    tokenClient.error_callback = () => finish(false);
+    setTimeout(() => finish(false), 8000);
+    tokenClient.requestAccessToken({ prompt: 'none' });
   });
 }
 
 function onConnected() {
   document.getElementById('connStatus').textContent = 'Connected';
   document.getElementById('connStatus').className = 'hdr-status connected';
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('filterBar').style.display = 'flex';
+  document.getElementById('taskList').style.display = '';
   document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   document.getElementById('actionBar').style.display = 'flex';
-  loadLists();
+  loadLists().then(() => updateDelBtn());
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 async function api(method, path, body) {
-  if (!await ensureToken()) throw new Error('Not authenticated');
+  if (!await ensureToken()) {
+    accessToken = null; tokenExpiry = 0;
+    sessionStorage.removeItem('pritos_tasks_token');
+    sessionStorage.removeItem('pritos_tasks_exp');
+    document.getElementById('taskList').style.display = 'none';
+    document.getElementById('filterBar').style.display = 'none';
+    document.getElementById('authScreen').style.display = '';
+    document.getElementById('actionBar').style.display = 'none';
+    document.getElementById('connStatus').textContent = 'Not connected';
+    document.getElementById('connStatus').className = 'hdr-status';
+    document.getElementById('listTabs').innerHTML = '';
+    throw new Error('Session expired — tap Sign In again');
+  }
   const opts = {
     method,
     headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' }
@@ -425,6 +589,7 @@ function switchList(id, title) {
   currentListId = id;
   currentListTitle = title;
   renderListTabs();
+  updateDelBtn();
   loadTasks();
 }
 
@@ -434,7 +599,7 @@ async function loadTasks() {
   document.getElementById('taskList').innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
   try {
     const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
-    const data = await api('GET', `/lists/${listId}/tasks?showCompleted=true&maxResults=100`);
+    const data = await api('GET', `/lists/${listId}/tasks?showCompleted=true&showHidden=true&maxResults=100`);
     tasks = data.items || [];
     renderTasks();
   } catch(e) { showErr(e.message); }
@@ -442,16 +607,23 @@ async function loadTasks() {
 
 function renderTasks() {
   const el = document.getElementById('taskList');
-  if (!tasks.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9989;</div><div class="empty-msg">No tasks. You're clear.<br><span style="font-size:12px">Tap + Add Task to get started.</span></div></div>`;
-    return;
-  }
-
   const today = new Date(); today.setHours(0,0,0,0);
   const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate()+1);
 
-  const overdue=[], dueToday=[], upcoming=[], noDate=[], done=[];
+  // Build subtask map, bucket only top-level tasks
+  const subtasksByParent = {};
+  const parentTasks = [];
   tasks.forEach(t => {
+    if (t.parent) {
+      if (!subtasksByParent[t.parent]) subtasksByParent[t.parent] = [];
+      subtasksByParent[t.parent].push(t);
+    } else {
+      parentTasks.push(t);
+    }
+  });
+
+  const overdue=[], dueToday=[], upcoming=[], noDate=[], done=[];
+  parentTasks.forEach(t => {
     if (t.status === 'completed') { done.push(t); return; }
     if (!t.due) { noDate.push(t); return; }
     const d = new Date(t.due);
@@ -460,42 +632,82 @@ function renderTasks() {
     else upcoming.push(t);
   });
 
+  // Apply filter
+  let showOverdue=true, showToday=true, showUpcoming=true, showNoDate=true, showDone=true;
+  if (currentFilter==='today')    { showOverdue=false; showUpcoming=false; showNoDate=false; showDone=false; }
+  if (currentFilter==='overdue')  { showToday=false; showUpcoming=false; showNoDate=false; showDone=false; }
+  if (currentFilter==='upcoming') { showOverdue=false; showToday=false; showNoDate=false; showDone=false; }
+  if (currentFilter==='nodate')   { showOverdue=false; showToday=false; showUpcoming=false; showDone=false; }
+
+  const visible = [
+    ...(showOverdue?overdue:[]), ...(showToday?dueToday:[]),
+    ...(showUpcoming?upcoming:[]), ...(showNoDate?noDate:[]), ...(showDone?done:[])
+  ];
+  if (!visible.length) {
+    const msg = currentFilter==='all' ? 'No tasks. You\'re clear.' : `No ${currentFilter} tasks.`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9989;</div><div class="empty-msg">${msg}<br><span style="font-size:12px">Tap + Add Task to get started.</span></div></div>`;
+    return;
+  }
+
+  const renderSection = (list) => list.map(t => taskWithSubsHTML(t, subtasksByParent)).join('');
+
   let html = '';
-  if (overdue.length) {
+  if (showOverdue && overdue.length) {
     html += `<div class="section-label" style="color:var(--err)">Overdue (${overdue.length})</div>`;
-    overdue.forEach(t => html += taskHTML(t));
+    html += renderSection(overdue);
   }
-  if (dueToday.length) {
+  if (showToday && dueToday.length) {
     html += `<div class="section-label" style="color:var(--warn)">Today</div>`;
-    dueToday.forEach(t => html += taskHTML(t));
+    html += renderSection(dueToday);
   }
-  if (upcoming.length) {
+  if (showUpcoming && upcoming.length) {
     html += `<div class="section-label">Upcoming</div>`;
-    upcoming.forEach(t => html += taskHTML(t));
+    html += renderSection(upcoming);
   }
-  if (noDate.length) {
+  if (showNoDate && noDate.length) {
     html += `<div class="section-label">No Date</div>`;
-    noDate.forEach(t => html += taskHTML(t));
+    html += renderSection(noDate);
   }
-  if (done.length) {
+  if (showDone && done.length) {
     html += `<div class="section-label">Completed (${done.length})</div>`;
-    done.forEach(t => html += taskHTML(t));
+    html += renderSection(done);
   }
   el.innerHTML = html;
 }
 
-function taskHTML(t) {
+function taskWithSubsHTML(t, subtasksByParent) {
+  const subs = subtasksByParent[t.id] || [];
+  if (!subs.length) return taskHTML(t);
+  const activeSubs = subs.filter(s => s.status !== 'completed');
+  const doneSubs = subs.filter(s => s.status === 'completed');
+  const subsHtml = [...activeSubs, ...doneSubs].map(s => subtaskHTML(s)).join('');
+  return `<div class="task-group">${taskHTML(t, true)}${subsHtml}</div>`;
+}
+
+function subtaskHTML(t) {
+  const done = t.status === 'completed';
+  return `<div class="subtask-row" id="task-${t.id}">
+    <div class="subtask-check${done?' checked':''}" onclick="toggleTask('${t.id}','${done?'needsAction':'completed'}')"></div>
+    <div class="subtask-title${done?' done':''}" onclick="openEdit('${t.id}')">${escHtml(t.title||'(no title)')}</div>
+    <button class="subtask-del" onclick="deleteTask('${t.id}')" title="Delete">&#215;</button>
+  </div>`;
+}
+
+function taskHTML(t, isGroupParent) {
   const done = t.status === 'completed';
   const due = t.due ? fmtDue(t.due) : '';
   const dueClass = due.overdue ? 'task-due overdue' : due.today ? 'task-due today' : 'task-due';
   const checkClass = done ? 'task-check checked' : 'task-check';
-  const itemClass = done ? 'task-item completed' : 'task-item';
+  let itemClass = done ? 'task-item completed' : 'task-item';
+  // Strip [ai:DATE] from displayed notes
+  const rawNotes = (t.notes || '').replace(/\[ai:\d{4}-\d{2}-\d{2}\]\s*/g, '').trim();
   const escapedTitle = escHtml(t.title || '(no title)');
-  const escapedNotes = t.notes ? `<div class="task-notes">${escHtml(t.notes)}</div>` : '';
+  const escapedNotes = rawNotes ? `<div class="task-notes">${escHtml(rawNotes)}</div>` : '';
   const dueLbl = due.label ? `<span class="${dueClass}">${due.label}</span>` : '';
-  return `<div class="${itemClass}" id="task-${t.id}">
+  const extraStyle = isGroupParent ? 'border-bottom:none;background:var(--s2)' : '';
+  return `<div class="${itemClass}" id="task-${t.id}" style="${extraStyle}">
     <div class="${checkClass}" onclick="toggleTask('${t.id}','${done?'needsAction':'completed'}')"></div>
-    <div class="task-body">
+    <div class="task-body" onclick="openEdit('${t.id}')" style="cursor:pointer">
       <div class="task-title">${escapedTitle}</div>
       ${dueLbl || escapedNotes ? `<div class="task-meta">${dueLbl}</div>${escapedNotes}` : ''}
     </div>
@@ -539,12 +751,90 @@ async function deleteTask(taskId) {
 
 async function refreshTasks() { await loadLists(); }
 
+// ─── Filter ───────────────────────────────────────────────────────────────────
+
+function setFilter(f) {
+  currentFilter = f;
+  ['all','today','overdue','upcoming','nodate'].forEach(k => {
+    document.getElementById('fp-' + k)?.classList.toggle('active', k === f);
+  });
+  renderTasks();
+}
+
+// ─── Edit Task ────────────────────────────────────────────────────────────────
+
+function openEdit(taskId) {
+  const t = tasks.find(t => t.id === taskId);
+  if (!t) return;
+  editingTaskId = taskId;
+  document.getElementById('editTitle').value = t.title || '';
+  document.getElementById('editNotes').value = t.notes || '';
+  if (t.due) {
+    document.getElementById('editDue').value = t.due.slice(0, 10);
+  } else {
+    document.getElementById('editDue').value = '';
+  }
+  document.getElementById('editModal').classList.add('open');
+  setTimeout(() => document.getElementById('editTitle').focus(), 80);
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('open');
+  editingTaskId = null;
+}
+
+async function saveEdit() {
+  if (!editingTaskId) return;
+  const title = document.getElementById('editTitle').value.trim();
+  if (!title) return;
+  const dueVal = document.getElementById('editDue').value;
+  const notesVal = document.getElementById('editNotes').value.trim();
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const body = { title };
+  if (dueVal) body.due = new Date(dueVal).toISOString().replace(/T.*/, 'T00:00:00.000Z');
+  else body.due = null;
+  if (notesVal) body.notes = notesVal;
+  else body.notes = '';
+  try {
+    const updated = await api('PATCH', `/lists/${listId}/tasks/${editingTaskId}`, body);
+    const idx = tasks.findIndex(t => t.id === editingTaskId);
+    if (idx >= 0) tasks[idx] = { ...tasks[idx], ...updated };
+    closeEdit();
+    renderTasks();
+  } catch(e) { showErr(e.message); }
+}
+
+async function deleteEditTask() {
+  if (!editingTaskId) return;
+  const t = tasks.find(t => t.id === editingTaskId);
+  if (!confirm(`Delete "${t?.title || 'this task'}"?`)) return;
+  const id = editingTaskId;
+  closeEdit();
+  await deleteTask(id);
+}
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
+
+function toggleTheme(isLight) {
+  if (isLight) {
+    document.documentElement.setAttribute('data-theme', 'light');
+    localStorage.setItem('pritos_theme', 'light');
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('pritos_theme');
+  }
+}
+
 // ─── Add Task ─────────────────────────────────────────────────────────────────
 
 function startAddTask() {
   const bar = document.getElementById('actionBar');
   bar.innerHTML = `
     <input class="task-input" id="newTaskInput" placeholder="New task..." autofocus>
+    <div class="add-date-row">
+      <input class="add-date-input" id="newTaskDue" type="date" title="Due date">
+      <input class="add-date-input" id="newTaskNotes" type="text" placeholder="Notes (optional)" style="flex:2">
+    </div>
     <div class="input-row">
       <button class="cancel-btn" onclick="cancelAdd()">Cancel</button>
       <button class="save-btn" onclick="saveTask()">Add</button>
@@ -566,9 +856,14 @@ function cancelAdd() {
 async function saveTask() {
   const title = document.getElementById('newTaskInput')?.value?.trim();
   if (!title) return;
+  const dueVal = document.getElementById('newTaskDue')?.value;
+  const notesVal = document.getElementById('newTaskNotes')?.value?.trim();
   const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const body = { title };
+  if (dueVal) body.due = new Date(dueVal).toISOString().replace(/T.*/, 'T00:00:00.000Z');
+  if (notesVal) body.notes = notesVal;
   try {
-    const t = await api('POST', `/lists/${listId}/tasks`, { title });
+    const t = await api('POST', `/lists/${listId}/tasks`, body);
     tasks.unshift(t);
     cancelAdd();
     renderTasks();
@@ -605,6 +900,10 @@ function openAI() {
   document.getElementById('aiSheet').classList.add('open');
   document.getElementById('aiResponse').className = 'ai-response';
   document.getElementById('aiResponse').textContent = '';
+  // Remove any leftover apply/add buttons from previous session
+  let sib = document.getElementById('aiResponse').nextElementSibling;
+  while (sib && sib.tagName === 'BUTTON') { const n = sib.nextElementSibling; sib.remove(); sib = n; }
+  renderSavedPrompts();
 }
 
 function closeAI() {
@@ -612,15 +911,61 @@ function closeAI() {
   document.getElementById('aiSheet').classList.remove('open');
 }
 
+// ─── Saved Prompts ─────────────────────────────────────────────────────────────
+
+function loadSavedPrompts() {
+  try { return JSON.parse(localStorage.getItem('pritos_prompts') || '[]'); }
+  catch(e) { return []; }
+}
+
+function renderSavedPrompts() {
+  const row = document.getElementById('savedPromptsRow');
+  if (!row) return;
+  const prompts = loadSavedPrompts();
+  if (!prompts.length) { row.style.display = 'none'; return; }
+  row.style.display = 'flex';
+  row.innerHTML = prompts.map((p, i) =>
+    `<div style="display:flex;align-items:center;gap:2px;background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:3px 6px 3px 10px;max-width:200px">
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--mx);font-size:11px" onclick="useSavedPrompt(${i})" title="${escHtml(p)}">${escHtml(p.length>32?p.slice(0,32)+'…':p)}</span>
+      <button onclick="deleteSavedPrompt(${i})" style="background:none;border:none;color:var(--mn);cursor:pointer;padding:0 3px;font-size:13px;line-height:1;flex-shrink:0">&#215;</button>
+    </div>`
+  ).join('');
+}
+
+function saveCurrentPrompt() {
+  const val = document.getElementById('aiInput')?.value?.trim();
+  if (!val) return;
+  const prompts = loadSavedPrompts();
+  if (prompts.includes(val)) { showErr('Already saved.'); return; }
+  if (prompts.length >= 8) prompts.shift();
+  prompts.push(val);
+  localStorage.setItem('pritos_prompts', JSON.stringify(prompts));
+  renderSavedPrompts();
+}
+
+function useSavedPrompt(idx) {
+  const p = loadSavedPrompts()[idx];
+  if (!p) return;
+  const input = document.getElementById('aiInput');
+  if (input) { input.value = p; input.focus(); }
+}
+
+function deleteSavedPrompt(idx) {
+  const prompts = loadSavedPrompts();
+  prompts.splice(idx, 1);
+  localStorage.setItem('pritos_prompts', JSON.stringify(prompts));
+  renderSavedPrompts();
+}
+
 const PROMPT_TEMPLATES = {
   prioritize: 'Here are my current tasks. Prioritize them by importance and urgency. Be direct and short.',
-  focus: 'Given these tasks, what ONE thing should I focus on RIGHT NOW and why?',
-  overdue: 'Which of these tasks are overdue or at risk? Flag them and suggest what to do.',
-  skip: 'Which tasks in this list could I skip or delegate without real consequences?',
-  group: 'Group these tasks by category or project. Keep it tight.',
-  workload: 'Summarize my total workload. How heavy is it? What\'s the shape of the work?',
-  today: 'Build a realistic game plan for what I can actually finish today.',
-  done: 'Based on the completed tasks, what did I get done? Give me a quick win summary.',
+  focus: 'Given these tasks, what ONE thing should I focus on RIGHT NOW and why? One sentence answer.',
+  overdue: 'Which of these tasks are overdue or at risk? Flag them and say what to do. Short.',
+  skip: 'Which tasks could I skip or delete without real consequences? Be ruthless.',
+  workload: 'Summarize my total workload in 3 sentences max. Heavy/medium/light and the main themes.',
+  today: 'Build a realistic game plan for what I can finish today. Short numbered list only.',
+  done: 'Based on completed tasks, what did I get done? Quick wins summary, 3-5 bullets.',
+  daily3: 'From my tasks, pick EXACTLY 3 to focus on today. Return a numbered list of 3 — task name then one-word reason (urgent/important/quick). Nothing else.',
 };
 
 async function runPrompt(type) {
@@ -666,33 +1011,325 @@ async function callAI(prompt, isExtract = false) {
   const resp = document.getElementById('aiResponse');
   resp.className = 'ai-response visible loading';
   resp.textContent = '';
+
+  const lists = taskLists.map(l => l.title).join(', ') || 'none';
+  const system = isExtract
+    ? 'Extract actionable tasks from the note. Return a numbered list, one task per line. Be concise.'
+    : `You are a direct, ADHD-friendly task assistant for Prit. No fluff. Short sentences.
+
+Available task lists: ${lists}
+Current list: ${currentListTitle}
+
+When the user asks you to DO something (delete, add, complete, clear), respond ONLY with JSON — no other text:
+{"action":"delete_list","list_name":"exact list title"}
+{"action":"add_task","list_name":"exact list title","title":"task title"}
+{"action":"complete_task","task_title":"part of task title"}
+{"action":"clear_completed","list_name":"exact list title"}
+
+For questions or analysis, respond with plain text.`;
+
   try {
     const r = await fetch(CF, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'gemini.ask',
-        key: CF_KEY,
-        prompt,
-        system: 'You are a direct, ADHD-friendly task management assistant. No fluff. Short sentences. Bullet points. Get to the point fast.'
-      })
+      body: JSON.stringify({ action: 'gemini.ask', key: CF_KEY, prompt, system })
     });
     const data = await r.json();
     resp.classList.remove('loading');
     if (data.error) { resp.textContent = 'Error: ' + data.error; return; }
-    resp.textContent = data.text || data.answer || JSON.stringify(data);
+    const text = (data.text || data.answer || '').trim();
+
+    if (!isExtract) {
+      try {
+        const act = JSON.parse(text);
+        if (act.action) { await executeAIAction(act, resp); return; }
+      } catch(e) { /* plain text response */ }
+    }
+    resp.textContent = text;
+    if (isExtract && text) {
+      const addBtn = document.createElement('button');
+      addBtn.className = 'save-btn';
+      addBtn.style.cssText = 'margin-top:10px;width:100%;padding:9px';
+      addBtn.textContent = '+ Add All Tasks to ' + currentListTitle;
+      addBtn.onclick = () => addExtractedTasks(text, addBtn);
+      resp.after(addBtn);
+    }
   } catch(e) {
     resp.classList.remove('loading');
     resp.textContent = 'AI error: ' + e.message;
   }
 }
 
+async function executeAIAction(act, resp) {
+  try {
+    if (act.action === 'delete_list') {
+      const name = act.list_name?.toLowerCase() || '';
+      const list = taskLists.find(l => l.title.toLowerCase() === name)
+                || taskLists.find(l => l.title.toLowerCase().includes(name) || name.includes(l.title.toLowerCase()));
+      if (!list) { resp.textContent = `List "${act.list_name}" not found. Lists: ${taskLists.map(l=>l.title).join(', ')}`; return; }
+      if (!confirm(`Delete "${list.title}" and all its tasks?`)) { resp.textContent = 'Cancelled.'; return; }
+      await api('DELETE', '/users/@me/lists/' + list.id);
+      // Optimistic: remove from local state immediately
+      taskLists = taskLists.filter(l => l.id !== list.id);
+      if (currentListId === list.id) {
+        const next = taskLists.find(l => l.title === 'My Tasks') || taskLists[0];
+        currentListId = next?.id || '@default';
+        currentListTitle = next?.title || 'My Tasks';
+      }
+      renderListTabs();
+      updateDelBtn();
+      tasks = [];
+      renderTasks();
+      resp.textContent = `✓ Deleted "${list.title}"`;
+      await loadTasks();
+      setTimeout(() => loadLists(), 1500);
+
+    } else if (act.action === 'add_task') {
+      const list = taskLists.find(l => l.title.toLowerCase() === act.list_name?.toLowerCase()) || taskLists.find(l => l.id === currentListId);
+      if (!list) { resp.textContent = 'List not found.'; return; }
+      await api('POST', `/lists/${list.id}/tasks`, { title: act.title });
+      resp.textContent = `✓ Added "${act.title}" to ${list.title}`;
+      if (list.id === currentListId) await loadTasks();
+
+    } else if (act.action === 'complete_task') {
+      const task = tasks.find(t => t.title.toLowerCase().includes(act.task_title?.toLowerCase()));
+      if (!task) { resp.textContent = `Task "${act.task_title}" not found in current list.`; return; }
+      const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+      await api('PATCH', `/lists/${listId}/tasks/${task.id}`, { status: 'completed' });
+      resp.textContent = `✓ Completed "${task.title}"`;
+      await loadTasks();
+
+    } else if (act.action === 'clear_completed') {
+      const list = act.list_name
+        ? taskLists.find(l => l.title.toLowerCase() === act.list_name.toLowerCase())
+        : taskLists.find(l => l.id === currentListId);
+      if (!list) { resp.textContent = 'List not found.'; return; }
+      await api('POST', `/lists/${list.id}/clear`);
+      resp.textContent = `✓ Cleared completed tasks from "${list.title}"`;
+      await loadTasks();
+
+    } else {
+      resp.textContent = act.text || 'Done.';
+    }
+  } catch(e) { resp.textContent = 'Failed: ' + e.message; }
+}
+
+// ─── Organize List ────────────────────────────────────────────────────────────
+
+async function organizeList() {
+  if (orgRunning) { showErr('Organize already running — wait for it to finish.'); return; }
+  const activeTasks = tasks.filter(t => t.status !== 'completed' && !t.parent);
+  if (!activeTasks.length) { showErr('No active tasks to organize.'); return; }
+
+  orgRunning = true;
+  const resp = document.getElementById('aiResponse');
+  if (!resp) { orgRunning = false; return; }
+  resp.className = 'ai-response visible loading';
+  resp.textContent = 'Analyzing ' + activeTasks.length + ' tasks...';
+  // Remove any leftover buttons
+  let sib = resp.nextElementSibling;
+  while (sib && sib.tagName === 'BUTTON') { const n = sib.nextElementSibling; sib.remove(); sib = n; }
+
+  const taskData = activeTasks.map(t => {
+    const aiMatch = (t.notes || '').match(/\[ai:(\d{4}-\d{2}-\d{2})\]/);
+    return {
+      id: t.id,
+      title: t.title,
+      notes_preview: (t.notes || '').replace(/\[ai:\d{4}-\d{2}-\d{2}\]\s*/g, '').slice(0, 80) || undefined,
+      ai_cleaned: aiMatch ? aiMatch[1] : null,
+    };
+  });
+
+  const prompt = `Organize these Google Tasks for someone with ADHD who needs a clean, focused list.
+
+INPUT (JSON array of tasks):
+${JSON.stringify(taskData, null, 2)}
+
+RULES:
+1. Group tasks that share a subject or project under ONE parent task
+2. A group needs at least 2 tasks — don't make a group of 1
+3. Rewrite titles to be: imperative verb + direct object, max 7 words, no filler words
+4. Tasks with ai_cleaned date were already organized — only move them into a group if they clearly belong; don't rewrite unless title is obviously wrong
+5. Standalone tasks that don't fit any group go in "keep" array
+6. "keep" tasks: still rewrite the title to be clean and direct unless ai_cleaned
+
+RETURN ONLY this exact JSON (no markdown, no explanation):
+{"groups":[{"parent_title":"string","subtasks":[{"title":"string","original_id":"string"}]}],"keep":[{"title":"string","original_id":"string"}]}`;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 28000);
+
+  try {
+    const r = await fetch(CF, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'gemini.ask', key: CF_KEY, prompt,
+        system: 'You are a task organizer. Output ONLY valid JSON. No markdown fences, no explanation, no extra text. Just the JSON object starting with { and ending with }.'
+      })
+    });
+    clearTimeout(timeout);
+    const data = await r.json();
+    resp.classList.remove('loading');
+    if (data.error) { resp.textContent = 'AI error: ' + data.error; orgRunning = false; return; }
+
+    const raw = (data.text || data.answer || '').trim().replace(/^```json?\s*/i, '').replace(/```\s*$/,'').trim();
+    let plan;
+    try { plan = JSON.parse(raw); }
+    catch(e) { resp.textContent = 'AI returned unexpected format — try again.'; orgRunning = false; return; }
+
+    // Validate plan structure
+    if (!plan || typeof plan !== 'object') { resp.textContent = 'Invalid response — try again.'; orgRunning = false; return; }
+    plan.groups = Array.isArray(plan.groups) ? plan.groups : [];
+    plan.keep = Array.isArray(plan.keep) ? plan.keep : [];
+
+    orgRunning = false;
+    showOrganizePreview(plan, resp);
+  } catch(e) {
+    clearTimeout(timeout);
+    orgRunning = false;
+    if (resp) {
+      resp.classList.remove('loading');
+      resp.textContent = e.name === 'AbortError'
+        ? 'Request timed out — check your connection and try again.'
+        : 'Error: ' + e.message;
+    }
+  }
+}
+
+function showOrganizePreview(plan, resp) {
+  const groups = plan.groups || [];
+  const keep = plan.keep || [];
+  const totalGrouped = groups.reduce((n, g) => n + (g.subtasks || []).length, 0);
+
+  if (!groups.length && !keep.length) {
+    resp.textContent = 'Your list is already clean — nothing to reorganize.';
+    return;
+  }
+
+  let html = `<div style="font-size:12px;font-weight:700;color:var(--acc);margin-bottom:10px;letter-spacing:.4px;text-transform:uppercase">Preview — ${groups.length} group${groups.length!==1?'s':''}, ${totalGrouped} tasks grouped</div>`;
+
+  groups.forEach(g => {
+    html += `<div class="org-group"><div class="org-group-title">&#128193; ${escHtml(g.parent_title)}</div>`;
+    (g.subtasks || []).forEach(s => { html += `<div class="org-subtask">&#8594; ${escHtml(s.title)}</div>`; });
+    html += `</div>`;
+  });
+
+  if (keep.length) {
+    html += `<div style="font-size:10px;font-weight:700;color:var(--mn);letter-spacing:.5px;text-transform:uppercase;margin:10px 0 6px">Standalone (no group)</div>`;
+    keep.forEach(k => { html += `<div style="font-size:12px;color:var(--mn);padding:4px 0;border-bottom:1px solid var(--bd)">&#8226; ${escHtml(k.title)}</div>`; });
+  }
+
+  resp.innerHTML = html;
+  resp.className = 'ai-response visible';
+
+  const btn = document.createElement('button');
+  btn.className = 'save-btn';
+  btn.style.cssText = 'margin-top:12px;width:100%;padding:11px;font-size:14px;font-weight:700';
+  btn.textContent = `&#10003; Apply — ${groups.length} groups + ${keep.length} standalone`;
+  btn.onclick = () => applyOrganization(plan, btn);
+  resp.after(btn);
+}
+
+async function applyOrganization(plan, btn) {
+  btn.disabled = true;
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  const today = new Date().toISOString().slice(0, 10);
+  const aiTag = `[ai:${today}]`;
+  let created = 0, errors = 0;
+
+  const toDelete = new Set();
+
+  // Step 1: create all parent + subtask pairs first (safe — originals still exist)
+  for (const group of (plan.groups || [])) {
+    let parentId;
+    try {
+      btn.textContent = `Creating "${group.parent_title}"...`;
+      const parent = await api('POST', `/lists/${listId}/tasks`, { title: group.parent_title, notes: aiTag });
+      parentId = parent.id;
+      created++;
+    } catch(e) { errors++; continue; }
+
+    for (const sub of (group.subtasks || [])) {
+      try {
+        await api('POST', `/lists/${listId}/tasks?parent=${parentId}`, { title: sub.title, notes: aiTag });
+        created++;
+        if (sub.original_id) toDelete.add(sub.original_id);
+      } catch(e) { errors++; }
+    }
+  }
+
+  // Step 2: update standalone tasks (rewrite title + mark cleaned)
+  for (const k of (plan.keep || [])) {
+    if (!k.original_id) continue;
+    const orig = tasks.find(t => t.id === k.original_id);
+    if (!orig) continue;
+    const existingNotes = (orig.notes || '').replace(/\[ai:\d{4}-\d{2}-\d{2}\]\s*/g, '').trim();
+    const titleChanged = orig.title !== k.title;
+    const needsMark = !(orig.notes || '').includes('[ai:');
+    if (titleChanged || needsMark) {
+      try {
+        await api('PATCH', `/lists/${listId}/tasks/${k.original_id}`, {
+          title: k.title,
+          notes: aiTag + (existingNotes ? '\n' + existingNotes : '')
+        });
+      } catch(e) { /* non-fatal */ }
+    }
+  }
+
+  // Step 3: delete originals that were grouped (only after all new ones created)
+  let deleted = 0;
+  for (const id of toDelete) {
+    try {
+      await api('DELETE', `/lists/${listId}/tasks/${id}`);
+      deleted++;
+    } catch(e) { /* task may already be gone */ }
+  }
+
+  btn.textContent = `&#10003; Done — ${created} tasks organized, ${deleted} originals removed${errors ? `, ${errors} skipped` : ''}`;
+  await loadTasks();
+  setTimeout(() => {
+    btn.remove();
+    document.getElementById('aiResponse').textContent = `Done. ${created} tasks organized into groups. Originals removed. Run again weekly to stay clean.`;
+  }, 2500);
+}
+
+async function addExtractedTasks(text, btn) {
+  const lines = text.split('\n')
+    .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
+    .filter(l => l.length > 2 && l.length < 300);
+  if (!lines.length) { showErr('No tasks found to add.'); return; }
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  const listId = currentListId === '@default' ? (taskLists.find(l => l.title === 'My Tasks')?.id || '@default') : currentListId;
+  let added = 0;
+  for (const title of lines) {
+    try {
+      const t = await api('POST', `/lists/${listId}/tasks`, { title });
+      tasks.unshift(t);
+      added++;
+    } catch(e) { /* skip failed ones */ }
+  }
+  btn.textContent = `✓ Added ${added} task${added !== 1 ? 's' : ''}`;
+  renderTasks();
+  setTimeout(() => { btn.remove(); }, 3000);
+}
+
 // ─── Settings ─────────────────────────────────────────────────────────────────
 
 function openSettings() {
+  const connected = accessToken && tokenExpiry > Date.now();
+  document.getElementById('settingsConnDot').style.background = connected ? 'var(--live)' : 'var(--err)';
+  document.getElementById('settingsConnLabel').textContent = connected ? 'Connected to Google Tasks' : 'Not signed in to Google';
   document.getElementById('settingsModal').classList.add('open');
-  const saved = localStorage.getItem(STORAGE_KEY) || '';
-  document.getElementById('clientIdInput').value = saved;
+}
+
+function hardReload() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+  }
+  caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => location.reload(true));
 }
 
 function closeSettings() {
@@ -700,10 +1337,7 @@ function closeSettings() {
 }
 
 function saveSettings() {
-  const val = document.getElementById('clientIdInput').value.trim();
-  if (val) localStorage.setItem(STORAGE_KEY, val);
   closeSettings();
-  location.reload();
 }
 
 function disconnectGoogle() {
@@ -712,7 +1346,6 @@ function disconnectGoogle() {
   tokenExpiry = 0;
   sessionStorage.removeItem('pritos_tasks_token');
   sessionStorage.removeItem('pritos_tasks_exp');
-  if (window.google?.accounts?.oauth2) google.accounts.oauth2.revoke(accessToken, () => {});
   closeSettings();
   location.reload();
 }
@@ -751,6 +1384,39 @@ async function nukeAllTasks() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// ─── Delete current list ──────────────────────────────────────────────────────
+
+async function deleteCurrentList() {
+  const list = taskLists.find(l => l.id === currentListId);
+  if (!list || list.title === 'My Tasks') { showErr("Can't delete My Tasks"); return; }
+  if (!confirm(`Delete "${list.title}" and ALL its tasks?\n\nThis cannot be undone.`)) return;
+  const btn = document.getElementById('delListBtn');
+  if (btn) btn.disabled = true;
+  try {
+    await api('DELETE', '/users/@me/lists/' + list.id);
+    taskLists = taskLists.filter(l => l.id !== list.id);
+    const next = taskLists.find(l => l.title === 'My Tasks') || taskLists[0];
+    currentListId = next?.id || '@default';
+    currentListTitle = next?.title || 'My Tasks';
+    renderListTabs();
+    updateDelBtn();
+    tasks = [];
+    renderTasks();
+    await loadTasks();
+  } catch(e) {
+    if (btn) btn.disabled = false;
+    showErr(e.message);
+  }
+}
+
+function updateDelBtn() {
+  const btn = document.getElementById('delListBtn');
+  if (!btn) return;
+  const list = taskLists.find(l => l.id === currentListId);
+  btn.style.display = (list && list.title !== 'My Tasks') ? '' : 'none';
+  btn.disabled = false;
+}
+
 function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
@@ -767,13 +1433,6 @@ function showErr(msg) {
   }
 }
 
-// Handle GIS script load
-document.addEventListener('DOMContentLoaded', () => {
-  const gisScript = document.querySelector('script[src*="gsi/client"]');
-  if (gisScript) {
-    gisScript.addEventListener('load', () => { if (!tokenClient) initGIS(); });
-  }
-});
 </script>
 </body>
 </html>
