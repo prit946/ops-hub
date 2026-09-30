@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -11,21 +11,22 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="PritOS">
-<meta name="theme-color" content="#0d0a1a">
+<meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
 <style>
 :root{
-  --bg:#0d0a1a;--s1:#1a1130;--s2:#231848;--bd:#3d2d6b;--bd2:#5b4394;
-  --acc:#8b5cf6;--acc2:#7c3aed;--acc-l:#c4b5fd;
-  --tx:#f0ebff;--mn:#9985c4;--mx:#d4c5f9;
+  --bg:#0f172a;--s1:#1e293b;--s2:#293548;--bd:#334155;--bd2:#475569;
+  --acc:#3b82f6;--acc2:#2563eb;--acc-l:#93c5fd;
+  --tx:#f1f5f9;--mn:#94a3b8;--mx:#e2e8f0;--fg:#f1f5f9;--bg2:#1e293b;
   --grn:#34d399;--red:#f87171;--amb:#fbbf24;--blue:#60a5fa;
   --font:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   --mono:'SF Mono','Fira Code',monospace;
   --r:10px;--r-sm:6px;
 }
 :root[data-theme="light"]{
-  --bg:#f5f0ff;--s1:#ffffff;--s2:#ede9fe;--bd:#c4b5fd;--bd2:#a78bfa;
-  --acc:#7c3aed;--acc2:#6d28d9;--acc-l:#4c1d95;
-  --tx:#1e1b4b;--mn:#6d28d9;--mx:#4c1d95;
+  --bg:#f8fafc;--s1:#ffffff;--s2:#f1f5f9;--bd:#e2e8f0;--bd2:#cbd5e1;
+  --acc:#2563eb;--acc2:#1d4ed8;--acc-l:#1d4ed8;
+  --tx:#0f172a;--mn:#64748b;--mx:#1e293b;--fg:#0f172a;--bg2:#f1f5f9;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg)}
@@ -34,7 +35,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 /* ── PIN LOCK (PritOS level) ── */
 #pritos-lock{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;align-items:center;justify-content:center}
 .plk-wrap{width:100%;max-width:300px;padding:0 24px;display:flex;flex-direction:column;align-items:center;gap:18px}
-.plk-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff;box-shadow:0 8px 24px rgba(139,92,246,.35)}
+.plk-logo{width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff;box-shadow:0 8px 24px rgba(59,130,246,.3)}
 .plk-title{font-size:20px;font-weight:900;letter-spacing:-.5px}
 .plk-title span{color:var(--acc)}
 .plk-dots{display:flex;gap:12px}
@@ -104,7 +105,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--tx);min-height:100
 .row-val a{color:var(--acc-l);text-decoration:none}
 .row-val a:hover{text-decoration:underline}
 .cp{background:none;border:none;cursor:pointer;color:var(--mn);padding:2px 6px;border-radius:3px;font-size:10px;flex-shrink:0;transition:color .1s}
-.cp:hover{color:var(--acc);background:rgba(139,92,246,.1)}
+.cp:hover{color:var(--acc);background:rgba(59,130,246,.1)}
 .cp.ok{color:var(--grn)}
 
 /* ── BUTTONS ── */
@@ -163,7 +164,7 @@ textarea.field{resize:vertical;font-family:var(--mono);font-size:11px;line-heigh
 .proj-body.open{display:block}
 .proj-links{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .proj-link{background:var(--s2);border:1px solid var(--bd);border-radius:20px;padding:4px 10px;font-size:11px;color:var(--acc-l);text-decoration:none;transition:all .15s;font-weight:600}
-.proj-link:hover{background:rgba(139,92,246,.15);border-color:var(--acc)}
+.proj-link:hover{background:rgba(59,130,246,.12);border-color:var(--acc)}
 .proj-notes-lbl{font-size:10px;font-weight:700;color:var(--mn);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .save-note-btn{background:none;border:none;color:var(--mn);font-size:10px;cursor:pointer;padding:2px 6px;border-radius:3px;font-family:var(--font)}
 .save-note-btn:hover{color:var(--acc)}
@@ -229,7 +230,7 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 .pcard-title{font-size:12px;font-weight:800;color:var(--tx);line-height:1.3}
 .pcard-meta{display:flex;align-items:center;gap:6px;margin-top:3px}
 .pcat-pill{font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;padding:1px 6px;border-radius:10px}
-.pcat-session{background:rgba(139,92,246,.15);color:var(--acc);border:1px solid rgba(139,92,246,.25)}
+.pcat-session{background:rgba(59,130,246,.12);color:var(--acc);border:1px solid rgba(59,130,246,.25)}
 .pcat-drive{background:rgba(96,165,250,.12);color:var(--blue);border:1px solid rgba(96,165,250,.25)}
 .pcat-store{background:rgba(251,191,36,.12);color:var(--amb);border:1px solid rgba(251,191,36,.25)}
 .pcat-brain{background:rgba(52,211,153,.12);color:var(--grn);border:1px solid rgba(52,211,153,.25)}
@@ -409,9 +410,16 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 
 <!-- ════════════════ PROJECTS ════════════════ -->
 <section class="tab" id="tab-projects">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <div class="s-hd" style="margin:0">Projects <span id="kv-proj-count" style="font-size:10px;font-weight:400;color:var(--mn);margin-left:6px"></span></div>
     <button class="btn btn-s btn-sm" onclick="loadKvProjects()">Refresh</button>
+  </div>
+  <input type="search" class="field" id="proj-search" placeholder="Search projects…" oninput="filterProjects()" style="margin-top:0;margin-bottom:10px">
+  <div class="cat-chips" id="proj-filter-chips">
+    <button class="cat-chip active" onclick="setProjFilter('all',this)">All</button>
+    <button class="cat-chip" onclick="setProjFilter('current',this)">Current</button>
+    <button class="cat-chip" onclick="setProjFilter('completed',this)">Completed</button>
+    <button class="cat-chip" onclick="setProjFilter('archived',this)">Archived</button>
   </div>
   <div id="kv-proj-list"></div>
 
@@ -1067,33 +1075,56 @@ function makeKvCard(p){
   return el;
 }
 
+let _kvProjects=[];
+let _projFilter='all';
+
 async function loadKvProjects(){
   const list=document.getElementById('kv-proj-list');
   const count=document.getElementById('kv-proj-count');
   if(!list)return;
   list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">Loading…</div>';
   const d=await gw({action:'context.list'}).catch(()=>({projects:[]}));
-  const projects=(d.projects||[]).sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated));
-  count.textContent=projects.length?`(${projects.length})`:'';
-  if(!projects.length){list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">No projects found.</div>';return;}
-  const live=projects.filter(p=>p.status==='live');
-  const active=projects.filter(p=>!['live','done','completed','shelved','archived'].includes((p.status||'').toLowerCase()));
-  const done=projects.filter(p=>['done','completed'].includes((p.status||'').toLowerCase()));
-  const shelved=projects.filter(p=>['shelved','archived'].includes((p.status||'').toLowerCase()));
+  _kvProjects=(d.projects||[]).sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated));
+  count.textContent=_kvProjects.length?`(${_kvProjects.length})`:'';
+  renderProjects();
+}
+
+function setProjFilter(f,btn){
+  _projFilter=f;
+  document.querySelectorAll('#proj-filter-chips .cat-chip').forEach(c=>c.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderProjects();
+}
+
+function filterProjects(){renderProjects();}
+
+function isCurrent(p){return['live','active','in-progress','wip'].includes((p.status||'active').toLowerCase());}
+function isDone(p){return['done','completed'].includes((p.status||'').toLowerCase());}
+function isArchived(p){return['shelved','archived'].includes((p.status||'').toLowerCase());}
+
+function renderProjects(){
+  const list=document.getElementById('kv-proj-list');
+  if(!list)return;
+  const q=(document.getElementById('proj-search')?.value||'').toLowerCase();
+  let projects=_kvProjects.filter(p=>!q||p.name.toLowerCase().includes(q)||(p.summary||'').toLowerCase().includes(q));
+  if(_projFilter==='current')projects=projects.filter(isCurrent);
+  else if(_projFilter==='completed')projects=projects.filter(isDone);
+  else if(_projFilter==='archived')projects=projects.filter(isArchived);
+  if(!projects.length){list.innerHTML='<div style="padding:20px 0;font-size:12px;color:var(--mn);text-align:center">No projects match.</div>';return;}
   list.innerHTML='';
-  function renderGroup(title,items,dim=false){
-    if(!items.length)return;
-    const hd=document.createElement('div');
-    hd.className='s-hd';
-    hd.style.cssText='margin-top:14px;margin-bottom:6px'+(dim?';opacity:.6':'');
-    hd.innerHTML=title+` <span style="font-size:10px;font-weight:400;color:var(--mn)">(${items.length})</span>`;
-    list.appendChild(hd);
-    items.forEach(p=>list.appendChild(makeKvCard(p)));
+  if(_projFilter==='all'){
+    const cur=projects.filter(isCurrent),done=projects.filter(isDone),arch=projects.filter(isArchived);
+    function rg(title,items,dim=false){
+      if(!items.length)return;
+      const hd=document.createElement('div');hd.className='s-hd';
+      hd.style.cssText='margin-top:14px;margin-bottom:6px'+(dim?';opacity:.55':'');
+      hd.innerHTML=title+` <span style="font-size:10px;font-weight:400;color:var(--mn)">(${items.length})</span>`;
+      list.appendChild(hd);items.forEach(p=>list.appendChild(makeKvCard(p)));
+    }
+    rg('Current',cur);rg('Completed',done,true);rg('Archived',arch,true);
+  } else {
+    projects.forEach(p=>list.appendChild(makeKvCard(p)));
   }
-  renderGroup('Live',[...live]);
-  renderGroup('Active',[...active]);
-  renderGroup('Completed',done,true);
-  renderGroup('Shelved',shelved,true);
 }
 
 async function toggleKvEntry(hd,name){
@@ -1125,7 +1156,11 @@ async function toggleKvEntry(hd,name){
       <button class="save-note-btn" id="kv-save-${name}" onclick="saveKvNote('${name}')">Save</button>
     </div>
     <textarea class="field" id="kv-note-${name}" rows="2" placeholder="Notes for next session…" style="margin:0 0 8px"></textarea>
-    <button class="btn btn-s btn-sm" style="font-size:10px;width:100%" onclick="editKvEntry('${name}')">Edit Full Context</button>`;
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn btn-s btn-sm" style="flex:1" onclick="copyKvPrompt('${name}')">Copy Session Prompt</button>
+      <button class="btn btn-s btn-sm" style="flex:1" onclick="editKvEntry('${name}')">Edit Context</button>
+      <button class="btn btn-s btn-sm" onclick="setKvStatus('${name}')">Set Status</button>
+    </div>`;
   if(nd.context)document.getElementById('kv-note-'+name).value=nd.context;
 }
 
@@ -1143,6 +1178,29 @@ async function editKvEntry(name){
   if(val===null)return;
   const d=await gw({action:'context.set',name,context:val});
   if(d.ok){toast('Saved "'+name+'" ✓');const b=document.getElementById('kv-body-'+name);if(b){b.dataset.loaded='';b.style.display='none';const a=document.getElementById('kv-arr-'+name);if(a)a.textContent='›';}}
+  else toast('Save failed');
+}
+
+async function copyKvPrompt(name){
+  const[cd,nd]=await Promise.all([
+    gw({action:'context.get',name}).catch(()=>({context:''})),
+    gw({action:'context.get',name:'note-'+name}).catch(()=>({context:''}))
+  ]);
+  const base=cd.context||'';
+  const note=nd.context||'';
+  const full=`# ${name} session\n\n${base}`+(note?`\n\n## My Notes\n${note}`:'');
+  navigator.clipboard.writeText(full).then(()=>toast('Session prompt copied!'));
+}
+
+async function setKvStatus(name){
+  const s=prompt(`Set status for "${name}":\nlive / active / wip / completed / archived`);
+  if(!s)return;
+  const cur=await gw({action:'context.get',name}).catch(()=>({context:''}));
+  let ctx=cur.context||'';
+  ctx=ctx.replace(/^STATUS:.*\n?/im,'');
+  ctx='STATUS: '+s.trim().toLowerCase()+'\n'+ctx;
+  const d=await gw({action:'context.set',name,context:ctx});
+  if(d.ok){toast('Status set to '+s+' ✓');await loadKvProjects();}
   else toast('Save failed');
 }
 
