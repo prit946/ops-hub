@@ -409,96 +409,9 @@ input:checked+.toggle-slider:before{transform:translateX(18px)}
 
 <!-- ════════════════ PROJECTS ════════════════ -->
 <section class="tab" id="tab-projects">
-  <div class="s-hd">Active Projects</div>
-  <div class="proj-card acc">
-    <div class="proj-hd" onclick="toggleProj('drivecore')">
-      <div><div class="proj-name">☁ DriveCore</div><div class="proj-sub">Google Drive auto-organizer · PIN protected</div></div>
-      <div style="display:flex;align-items:center;gap:8px"><span class="badge live">Live</span><span style="color:var(--mn);font-size:16px" id="arr-drivecore">›</span></div>
-    </div>
-    <div class="proj-body" id="body-drivecore">
-      <div class="proj-links">
-        <a class="proj-link" href="https://prit946.github.io/store8181-hub/drivecore.html" target="_blank">Open Tool</a>
-        <a class="proj-link" href="https://github.com/prit946/ops-hub" target="_blank">ops-hub repo</a>
-        <a class="proj-link" href="https://script.google.com/home/projects/1qmZ9Vravgtx2uf0VjQYB-_-IGO8si8eEu7jUQM9x1d2C9ntX24Czehaf/edit" target="_blank">GAS Script</a>
-      </div>
-      <div class="row"><span class="row-lbl">GAS</span><span class="row-val mono">v56 — learned rules, short folder names</span></div>
-      <div class="row"><span class="row-lbl">Trigger</span><span class="row-val mono">dcOngoing — Sundays 2am</span></div>
-      <div class="row"><span class="row-lbl">NAS</span><span class="row-val mono">Planned — MD in KV (drivecore-nas)</span></div>
-      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
-        <span class="proj-notes-lbl">Notes</span>
-        <button class="save-note-btn" id="save-note-drivecore" onclick="saveNote('drivecore')">Save</button>
-      </div>
-      <textarea class="field" id="note-drivecore" rows="3" placeholder="Notes, reminders, open tasks…"></textarea>
-      <button class="btn btn-s btn-sm" style="margin-top:8px;width:100%" onclick="copyPrompt('drivecore')">Copy Session Prompt</button>
-    </div>
-  </div>
-  <div class="proj-card blue">
-    <div class="proj-hd" onclick="toggleProj('brainos')">
-      <div><div class="proj-name">🧠 BrainOS</div><div class="proj-sub">ADHD productivity app · CF Worker + D1</div></div>
-      <div style="display:flex;align-items:center;gap:8px"><span class="badge live">Live</span><span style="color:var(--mn);font-size:16px" id="arr-brainos">›</span></div>
-    </div>
-    <div class="proj-body" id="body-brainos">
-      <div class="proj-links">
-        <a class="proj-link" href="brain-os.html">Open App</a>
-        <a class="proj-link" href="https://github.com/prit946/ops-hub" target="_blank">ops-hub repo</a>
-      </div>
-      <div class="row"><span class="row-lbl">API</span><span class="row-val mono" style="font-size:10px">brain-os.prit946.workers.dev</span></div>
-      <div class="row"><span class="row-lbl">DB</span><span class="row-val">Cloudflare D1 — brain-os-db</span></div>
-      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
-        <span class="proj-notes-lbl">Notes</span>
-        <button class="save-note-btn" id="save-note-brainos" onclick="saveNote('brainos')">Save</button>
-      </div>
-      <textarea class="field" id="note-brainos" rows="3" placeholder="Notes…"></textarea>
-      <button class="btn btn-s btn-sm" style="margin-top:8px;width:100%" onclick="copyPrompt('brainos')">Copy Session Prompt</button>
-    </div>
-  </div>
-  <div class="proj-card amb">
-    <div class="proj-hd" onclick="toggleProj('bizops')">
-      <div><div class="proj-name">💼 Business Ops</div><div class="proj-sub">Business operations dashboard</div></div>
-      <div style="display:flex;align-items:center;gap:8px"><span class="badge wip">WIP</span><span style="color:var(--mn);font-size:16px" id="arr-bizops">›</span></div>
-    </div>
-    <div class="proj-body" id="body-bizops">
-      <div class="proj-links">
-        <a class="proj-link" href="https://prit946.github.io/prit-business-op/" target="_blank">Open (WIP)</a>
-        <a class="proj-link" href="https://github.com/prit946/prit-business-op" target="_blank">GitHub Repo</a>
-      </div>
-      <div class="row"><span class="row-lbl">Status</span><span class="row-val" style="color:var(--amb)">Needs definition — scope unclear</span></div>
-      <div class="row"><span class="row-lbl">Next</span><span class="row-val">Clean up, define what this does</span></div>
-      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
-        <span class="proj-notes-lbl">Notes</span>
-        <button class="save-note-btn" id="save-note-bizops" onclick="saveNote('bizops')">Save</button>
-      </div>
-      <textarea class="field" id="note-bizops" rows="3" placeholder="What should this do? Features needed…"></textarea>
-      <button class="btn btn-s btn-sm" style="margin-top:8px;width:100%" onclick="copyPrompt('bizops')">Copy Session Prompt</button>
-    </div>
-  </div>
-  <div class="proj-card">
-    <div class="proj-hd" onclick="toggleProj('cfgateway')">
-      <div><div class="proj-name">⚡ CF Gateway Worker</div><div class="proj-sub">Cloudflare Worker — all tools route through this</div></div>
-      <div style="display:flex;align-items:center;gap:8px"><span class="badge live">Live</span><span style="color:var(--mn);font-size:16px" id="arr-cfgateway">›</span></div>
-    </div>
-    <div class="proj-body" id="body-cfgateway">
-      <div class="proj-links">
-        <a class="proj-link" href="https://github.com/prit946/claude-gateway-worker" target="_blank">Repo</a>
-        <a class="proj-link" href="https://dash.cloudflare.com" target="_blank">CF Dashboard</a>
-      </div>
-      <div class="row"><span class="row-lbl">URL</span><span class="row-val mono" style="font-size:10px">spring-sea-ac0a.prit946.workers.dev</span><button class="cp" onclick="cp(this,'https://spring-sea-ac0a.prit946.workers.dev')">⧉</button></div>
-      <div class="row"><span class="row-lbl">Key</span><span class="row-val mono">Store8181Prit2026</span><button class="cp" onclick="cp(this,'Store8181Prit2026')">⧉</button></div>
-      <div class="row"><span class="row-lbl">Local</span><span class="row-val mono" style="font-size:10px">~/Projects/Claude/gateway-worker/</span></div>
-      <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
-        <span class="proj-notes-lbl">Notes</span>
-        <button class="save-note-btn" id="save-note-cfgateway" onclick="saveNote('cfgateway')">Save</button>
-      </div>
-      <textarea class="field" id="note-cfgateway" rows="2" placeholder="Notes…"></textarea>
-    </div>
-  </div>
-  <div class="s-hd" style="margin-top:18px">KV Project Contexts <span id="kv-proj-count" style="font-size:10px;font-weight:400;color:var(--mn);margin-left:6px"></span></div>
-  <div class="card" style="margin-bottom:6px">
-    <div class="card-body" style="padding:10px 12px;display:flex;gap:8px;align-items:center">
-      <button class="btn btn-s btn-sm" onclick="loadKvProjects()" style="flex:none">Refresh</button>
-      <span style="font-size:11px;color:var(--mn)">All contexts saved in CF Worker KV</span>
-      <a href="context.html" style="margin-left:auto;font-size:11px;color:var(--acc-l);text-decoration:none;font-weight:700">Full Hub →</a>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <div class="s-hd" style="margin:0">Projects <span id="kv-proj-count" style="font-size:10px;font-weight:400;color:var(--mn);margin-left:6px"></span></div>
+    <button class="btn btn-s btn-sm" onclick="loadKvProjects()">Refresh</button>
   </div>
   <div id="kv-proj-list"></div>
 
@@ -928,7 +841,7 @@ function showTab(name){
   document.getElementById('tab-'+name).classList.add('active');
   document.getElementById('nav-'+name).classList.add('active');
   if(name==='home')loadHome();
-  if(name==='projects'){loadProjectNotes();loadKvProjects();}
+  if(name==='projects'){loadKvProjects();}
   if(name==='infra')checkInfra();
   if(name==='settings')loadSettings();
   if(name==='prompts')initPrompts();
@@ -1114,54 +1027,122 @@ async function createProject(){
   else toast('Failed to create project');
 }
 
+function escHtml2(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function timeSince(dateStr){
+  if(!dateStr)return'';
+  const days=Math.floor((Date.now()-new Date(dateStr))/86400000);
+  if(days<1)return'today';if(days<7)return days+'d ago';
+  if(days<30)return Math.floor(days/7)+'w ago';
+  return Math.floor(days/30)+'mo ago';
+}
+
+function statusBadge(s){
+  s=(s||'active').toLowerCase();
+  if(s==='live')return'<span class="badge live">Live</span>';
+  if(s==='done'||s==='completed')return'<span class="badge" style="background:rgba(34,197,94,.12);color:#22c55e;border:1px solid rgba(34,197,94,.25)">Done</span>';
+  if(s==='shelved'||s==='archived')return'<span class="badge" style="background:rgba(100,116,139,.12);color:#94a3b8;border:1px solid rgba(100,116,139,.25)">Shelved</span>';
+  if(s==='wip'||s==='in-progress')return'<span class="badge wip">WIP</span>';
+  return'<span class="badge wip">Active</span>';
+}
+
+function makeKvCard(p){
+  const el=document.createElement('div');
+  el.className='proj-card';
+  el.style.cssText='margin-bottom:8px;border-radius:10px;overflow:hidden';
+  const since=timeSince(p.lastUpdated);
+  el.innerHTML=`
+    <div class="proj-hd" style="cursor:pointer" onclick="toggleKvEntry(this,'${p.name}')">
+      <div style="min-width:0">
+        <div class="proj-name" style="font-size:13px">${escHtml2(p.name)}</div>
+        ${p.summary?`<div class="proj-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml2(p.summary)}</div>`:''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+        ${statusBadge(p.status)}
+        ${since?`<span style="font-size:10px;color:var(--mn)">${since}</span>`:''}
+        <span style="color:var(--mn);font-size:16px" id="kv-arr-${p.name}">›</span>
+      </div>
+    </div>
+    <div class="proj-body" id="kv-body-${p.name}" style="display:none"></div>`;
+  return el;
+}
+
 async function loadKvProjects(){
   const list=document.getElementById('kv-proj-list');
   const count=document.getElementById('kv-proj-count');
   if(!list)return;
   list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">Loading…</div>';
-  const d=await gw({action:'context.list'}).catch(()=>({names:[]}));
-  const names=(d.names||[]).sort();
-  count.textContent=names.length?`(${names.length})`:'';
-  if(!names.length){list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">No KV contexts found.</div>';return;}
+  const d=await gw({action:'context.list'}).catch(()=>({projects:[]}));
+  const projects=(d.projects||[]).sort((a,b)=>new Date(b.lastUpdated)-new Date(a.lastUpdated));
+  count.textContent=projects.length?`(${projects.length})`:'';
+  if(!projects.length){list.innerHTML='<div style="padding:10px 0;font-size:11px;color:var(--mn)">No projects found.</div>';return;}
+  const live=projects.filter(p=>p.status==='live');
+  const active=projects.filter(p=>!['live','done','completed','shelved','archived'].includes((p.status||'').toLowerCase()));
+  const done=projects.filter(p=>['done','completed'].includes((p.status||'').toLowerCase()));
+  const shelved=projects.filter(p=>['shelved','archived'].includes((p.status||'').toLowerCase()));
   list.innerHTML='';
-  names.forEach(name=>{
-    const el=document.createElement('div');
-    el.className='proj-card';
-    el.style.cssText='margin-bottom:8px;border-radius:10px;overflow:hidden';
-    el.innerHTML=`
-      <div class="proj-hd" style="cursor:pointer" onclick="toggleKvEntry(this)">
-        <div><div class="proj-name" style="font-size:13px">${name}</div></div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <button class="btn btn-s btn-sm" style="font-size:10px;padding:3px 8px" onclick="event.stopPropagation();editKvEntry('${name}')">Edit</button>
-          <span style="color:var(--mn);font-size:16px">›</span>
-        </div>
-      </div>
-      <div class="proj-body" id="kv-body-${name}" style="display:none">
-        <div style="font-size:11px;color:var(--mn);margin-bottom:6px">Loading…</div>
-      </div>`;
-    list.appendChild(el);
-  });
+  function renderGroup(title,items,dim=false){
+    if(!items.length)return;
+    const hd=document.createElement('div');
+    hd.className='s-hd';
+    hd.style.cssText='margin-top:14px;margin-bottom:6px'+(dim?';opacity:.6':'');
+    hd.innerHTML=title+` <span style="font-size:10px;font-weight:400;color:var(--mn)">(${items.length})</span>`;
+    list.appendChild(hd);
+    items.forEach(p=>list.appendChild(makeKvCard(p)));
+  }
+  renderGroup('Live',[...live]);
+  renderGroup('Active',[...active]);
+  renderGroup('Completed',done,true);
+  renderGroup('Shelved',shelved,true);
 }
 
-async function toggleKvEntry(hd){
-  const body=hd.nextElementSibling;
-  const name=hd.querySelector('.proj-name').textContent;
-  if(body.style.display!=='none'){body.style.display='none';return;}
-  body.style.display='';
+async function toggleKvEntry(hd,name){
+  const body=document.getElementById('kv-body-'+name);
+  const arr=document.getElementById('kv-arr-'+name);
+  if(body.style.display!=='none'){body.style.display='none';if(arr)arr.textContent='›';return;}
+  body.style.display='';if(arr)arr.textContent='⌄';
   if(body.dataset.loaded)return;
   body.dataset.loaded='1';
-  const d=await gw({action:'context.get',name}).catch(()=>({context:''}));
-  body.innerHTML=`<pre style="white-space:pre-wrap;word-break:break-word;font-size:10px;font-family:var(--mono);color:var(--fg);background:var(--bg2);padding:10px;border-radius:6px;margin:0;max-height:220px;overflow:auto">${escHtml2(d.context||'(empty)')}</pre>
-    <button class="btn btn-s btn-sm" style="margin-top:8px;font-size:10px" onclick="editKvEntry('${name}')">Edit in text area</button>`;
+  body.innerHTML='<div style="font-size:11px;color:var(--mn);padding:4px 0">Loading…</div>';
+  const[cd,nd]=await Promise.all([
+    gw({action:'context.get',name}).catch(()=>({context:''})),
+    gw({action:'context.get',name:'note-'+name}).catch(()=>({context:''}))
+  ]);
+  const ctx=cd.context||'';
+  const pm=ctx.match(/(?:^|\n)(?:##\s*Pending|PENDING:?)\s*\n([\s\S]*?)(?=\n##\s|\n[A-Z]{2,}:|$)/i);
+  let pendingHtml='';
+  if(pm){
+    const items=pm[1].split('\n').map(l=>l.trim()).filter(l=>/^[-*]|\d+\./.test(l));
+    if(items.length)pendingHtml=`<div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:700;color:var(--amb);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px">Pending (${items.length})</div>
+      ${items.map(i=>`<div style="padding:2px 0;font-size:12px;color:var(--fg);display:flex;gap:6px"><span style="color:var(--amb);flex-shrink:0">·</span><span>${escHtml2(i.replace(/^[-*]\s*|\d+\.\s*/,''))}</span></div>`).join('')}
+    </div>`;
+  }
+  body.innerHTML=`${pendingHtml}
+    <pre style="white-space:pre-wrap;word-break:break-word;font-size:10px;font-family:var(--mono);color:var(--fg);background:var(--bg2);padding:10px;border-radius:6px;margin:0 0 10px;max-height:200px;overflow:auto">${escHtml2(ctx||'(empty)')}</pre>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <span class="proj-notes-lbl">Session Notes</span>
+      <button class="save-note-btn" id="kv-save-${name}" onclick="saveKvNote('${name}')">Save</button>
+    </div>
+    <textarea class="field" id="kv-note-${name}" rows="2" placeholder="Notes for next session…" style="margin:0 0 8px"></textarea>
+    <button class="btn btn-s btn-sm" style="font-size:10px;width:100%" onclick="editKvEntry('${name}')">Edit Full Context</button>`;
+  if(nd.context)document.getElementById('kv-note-'+name).value=nd.context;
 }
 
-function escHtml2(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+async function saveKvNote(name){
+  const val=document.getElementById('kv-note-'+name)?.value||'';
+  const btn=document.getElementById('kv-save-'+name);
+  const d=await gw({action:'context.set',name:'note-'+name,context:val});
+  if(d.ok&&btn){const o=btn.textContent;btn.textContent='Saved ✓';btn.classList.add('saved');setTimeout(()=>{btn.textContent=o;btn.classList.remove('saved')},2000);}
+  else toast('Save failed');
+}
 
 async function editKvEntry(name){
-  const val=prompt('Edit KV context for "'+name+'" — this will overwrite. Leave blank to cancel.');
-  if(val===null||val==='')return;
+  const cur=await gw({action:'context.get',name}).catch(()=>({context:''}));
+  const val=prompt(`Edit context for "${name}" — this overwrites:`,cur.context||'');
+  if(val===null)return;
   const d=await gw({action:'context.set',name,context:val});
-  if(d.ok){toast('Saved "'+name+'" to KV ✓');loadKvProjects();}
+  if(d.ok){toast('Saved "'+name+'" ✓');const b=document.getElementById('kv-body-'+name);if(b){b.dataset.loaded='';b.style.display='none';const a=document.getElementById('kv-arr-'+name);if(a)a.textContent='›';}}
   else toast('Save failed');
 }
 
